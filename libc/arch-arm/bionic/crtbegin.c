@@ -31,6 +31,7 @@ typedef struct
     void (**preinit_array)(void);
     void (**init_array)(void);
     void (**fini_array)(void);
+    void (**ctors_array)(void);
 } structors_array_t;
 
 extern int main(int argc, char **argv, char **env);
@@ -51,7 +52,10 @@ void (*__INIT_ARRAY__)(void) = (void (*)(void)) -1;
 __attribute__ ((section (".fini_array")))
 void (*__FINI_ARRAY__)(void) = (void (*)(void)) -1;
 
-__attribute__((visibility("hidden")))
+__attribute__ ((section (".ctors")))
+void (*__CTOR_LIST__)(void) = (void (*)(void)) -1;
+
+__attribute__((visbility("hidden")))
 void _start() {
   structors_array_t array;
   void *elfdata;
@@ -59,6 +63,7 @@ void _start() {
   array.preinit_array = &__PREINIT_ARRAY__;
   array.init_array =    &__INIT_ARRAY__;
   array.fini_array =    &__FINI_ARRAY__;
+  array.ctors_array =   &__CTOR_LIST__;
 
   elfdata = __builtin_frame_address(0) + sizeof(void *);
   __libc_init(elfdata, (void *) 0, &main, &array);
