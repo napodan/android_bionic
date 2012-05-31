@@ -571,7 +571,6 @@ ifeq ($(TARGET_ARCH),mips)
     libc_crt_target_so_cflags := -fPIC
 endif
 ifeq ($(TARGET_ARCH),x86)
-    libc_crtbegin_extension := S
     libc_crt_target_so_cflags := -fPIC
 endif
 libc_crt_target_so_cflags := $(libc_crt_target_cflags)
