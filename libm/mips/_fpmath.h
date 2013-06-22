@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2010 The Android Open Source Project
+ * Copyright (c) 2002, 2003 David Schultz <das@FreeBSD.ORG>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,32 +23,34 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * $FreeBSD: src/lib/libc/mips/_fpmath.h,v 1.1 2008/04/26 12:07:59 imp Exp $
  */
-#define _GNU_SOURCE 1
-#include <math.h>
 
-// Disable sincos optimization for all functions in this file,
-// otherwise gcc would generate infinite calls.
-// Refer to gcc PR46926.
-// -fno-builtin-sin or -fno-builtin-cos can disable sincos optimization,
-// but these two options do not work inside optimize pragma in-file.
-// Thus we just enforce -O0 when compiling this file.
-#pragma GCC optimize ("O0")
+union IEEEl2bits {
+	long double	e;
+	struct {
+#ifndef __MIPSEB__
+		unsigned int	manl	:32;
+		unsigned int	manh	:20;
+		unsigned int	exp	:11;
+		unsigned int	sign	:1;
+#else
+		unsigned int		sign	:1;
+		unsigned int		exp	:11;
+		unsigned int		manh	:20;
+		unsigned int		manl	:32;
+#endif
+	} bits;
+};
 
-void  sincos(double x, double *psin, double *pcos)
-{
-    *psin = sin(x);
-    *pcos = cos(x);
-}
+#define	LDBL_NBIT	0
+#define	mask_nbit_l(u)	((void)0)
+#define	LDBL_IMPLICIT_NBIT
 
-void  sincosf(float x, float *psin, float *pcos)
-{
-    *psin = sinf(x);
-    *pcos = cosf(x);
-}
+#define	LDBL_MANH_SIZE	20
+#define	LDBL_MANL_SIZE	32
 
-void  sincosl(long double x, long double *psin, long double *pcos)
-{
-    *psin = sin(x);
-    *pcos = cos(x);
-}
+#define	LDBL_TO_ARRAY32(u, a) do {			\
+	(a)[0] = (uint32_t)(u).bits.manl;		\
+	(a)[1] = (uint32_t)(u).bits.manh;		\
+} while(0)

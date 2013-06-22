@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2010 The Android Open Source Project
+ * Copyright (c) 2008 David Schultz <das@FreeBSD.ORG>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,33 +22,22 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
  */
-#define _GNU_SOURCE 1
+
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
+
 #include <math.h>
 
-// Disable sincos optimization for all functions in this file,
-// otherwise gcc would generate infinite calls.
-// Refer to gcc PR46926.
-// -fno-builtin-sin or -fno-builtin-cos can disable sincos optimization,
-// but these two options do not work inside optimize pragma in-file.
-// Thus we just enforce -O0 when compiling this file.
-#pragma GCC optimize ("O0")
-
-void  sincos(double x, double *psin, double *pcos)
+/*
+ * We simply call tgamma() rather than bloating the math library with
+ * a float-optimized version of it. The reason is that tgammaf() is
+ * essentially useless, since the function is superexponential and
+ * floats have very limited range.
+ */
+float
+tgammaf(float x)
 {
-    *psin = sin(x);
-    *pcos = cos(x);
-}
 
-void  sincosf(float x, float *psin, float *pcos)
-{
-    *psin = sinf(x);
-    *pcos = cosf(x);
-}
-
-void  sincosl(long double x, long double *psin, long double *pcos)
-{
-    *psin = sin(x);
-    *pcos = cos(x);
+	return (tgamma(x));
 }
