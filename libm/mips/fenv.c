@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2010 The Android Open Source Project
+ * Copyright (c) 2004 David Schultz <das@FreeBSD.ORG>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,32 +23,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * $FreeBSD: src/lib/msun/mips/fenv.c,v 1.1 2008/04/26 12:20:29 imp Exp $
  */
-#define _GNU_SOURCE 1
-#include <math.h>
 
-// Disable sincos optimization for all functions in this file,
-// otherwise gcc would generate infinite calls.
-// Refer to gcc PR46926.
-// -fno-builtin-sin or -fno-builtin-cos can disable sincos optimization,
-// but these two options do not work inside optimize pragma in-file.
-// Thus we just enforce -O0 when compiling this file.
-#pragma GCC optimize ("O0")
+#include <fenv.h>
 
-void  sincos(double x, double *psin, double *pcos)
-{
-    *psin = sin(x);
-    *pcos = cos(x);
-}
-
-void  sincosf(float x, float *psin, float *pcos)
-{
-    *psin = sinf(x);
-    *pcos = cosf(x);
-}
-
-void  sincosl(long double x, long double *psin, long double *pcos)
-{
-    *psin = sin(x);
-    *pcos = cos(x);
-}
+/*
+ * Hopefully the system ID byte is immutable, so it's valid to use
+ * this as a default environment.
+ */
+const fenv_t __fe_dfl_env = 0;
