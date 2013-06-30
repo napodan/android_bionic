@@ -4,13 +4,13 @@ import sys, os, commands, string
 
 # support Bionic architectures, add new ones as appropriate
 #
-bionic_archs = [ "arm", "x86" ]
+bionic_archs = [ "arm", "x86", "mips" ]
 
 # basic debugging trace support
 # call D_setlevel to set the verbosity level
 # and D(), D2(), D3(), D4() to add traces
 #
-verbose = 1
+verbose = 0
 
 def D(msg):
     global verbose
@@ -105,8 +105,29 @@ def find_bionic_root():
     else:
         return None
 
+def find_original_kernel_headers():
+    """try to find the directory containing the original kernel headers"""
+    bionic_root = find_bionic_root()
+    if not bionic_root:
+        D("Could not find Bionic root !!")
+        return None
+
+    path = os.path.normpath(bionic_root + "/../../external/kernel-headers/original")
+    if not os.path.isdir(path):
+        D("Could not find %s" % (path))
+        return None
+
+    return path
+
 def find_kernel_headers():
     """try to find the directory containing the kernel headers for this machine"""
+
+    # First try to find the original kernel headers.
+    ret = find_original_kernel_headers()
+    if ret:
+        D("found original kernel headers in: %s" % (ret))
+        return ret
+
     status, version = commands.getstatusoutput( "uname -r" )  # get Linux kernel version
     if status != 0:
         D("could not execute 'uname -r' command properly")
@@ -116,14 +137,39 @@ def find_kernel_headers():
     if len(version) > 5 and version[-5:] == "-xenU":
         version = version[:-5]
 
-    path = "/usr/src/linux-headers-" + version
-    D("probing %s for kernel headers" % (path+"/include"))
+    path = "/usr/src/linux-headers-" + version + "/include"
+    D("probing %s for kernel headers" % (path))
     ret = os.path.isdir( path )
     if ret:
-        D("found kernel headers in: %s" % (path + "/include"))
+        D("found kernel headers in: %s" % (path))
         return path
     return None
 
+def find_arch_header(kernel_headers,arch,header):
+    # First, try in <root>/arch/<arm>/include/<header>
+    # corresponding to the location in the kernel source tree for
+    # certain architectures (e.g. arm).
+    path = "%s/arch/%s/include/asm/%s" % (kernel_headers, arch, header)
+    D("Probing for %s" % path)
+    if os.path.exists(path):
+        return path
+
+    # Try <root>/asm-<arch>/include/<header> corresponding to the location
+    # in the kernel source tree for other architectures (e.g. x86).
+    path = "%s/include/asm-%s/%s" % (kernel_headers, arch, header)
+    D("Probing for %s" % path)
+    if os.path.exists(path):
+        return path
+
+    # Otherwise, look under <root>/asm-<arch>/<header> corresponding
+    # the original kernel headers directory
+    path = "%s/asm-%s/%s" % (kernel_headers, arch, header)
+    D("Probing for %s" % path)
+    if os.path.exists(path):
+        return path
+
+
+    return None
 
 # parser for the SYSCALLS.TXT file
 #
@@ -132,7 +178,7 @@ class SysCallsTxtParser:
         self.syscalls = []
         self.lineno   = 0
 
-    def E(msg):
+    def E(self, msg):
         print "%d: %s" % (self.lineno, msg)
 
     def parse_line(self, line):
@@ -192,37 +238,55 @@ class SysCallsTxtParser:
 
         number = line[pos_rparen+1:].strip()
         if number == "stub":
-            syscall_id  = -1
-            syscall_id2 = -1
-            syscall_id3 = -1
+            syscall_common = -1
+            syscall_arm  = -1
+            syscall_x86 = -1
+            syscall_mips = -1
         else:
             try:
                 if number[0] == '#':
                     number = number[1:].strip()
                 numbers = string.split(number,',')
-                syscall_id  = int(numbers[0])
-                syscall_id2 = syscall_id
-                syscall_id3 = syscall_id
-                if len(numbers) > 1:
-                    syscall_id2 = int(numbers[1])
-                    syscall_id3 = syscall_id2
-                if len(numbers) > 2:
-                    syscall_id3 = int(numbers[2])
+                if len(numbers) == 1:
+                    syscall_common = int(numbers[0])
+                    syscall_arm = -1
+                    syscall_x86 = -1
+                    syscall_mips = -1
+                else:
+                    if len(numbers) == 3:
+                        syscall_common = -1
+                        syscall_arm  = int(numbers[0])
+                        syscall_x86 = int(numbers[1])
+                        syscall_mips = int(numbers[2])
+                    else:
+                        E("invalid syscall number format in '%s'" % line)
+                        return
             except:
                 E("invalid syscall number in '%s'" % line)
                 return
 
-        print str(syscall_id) + ':' + str(syscall_id2) + ':' + str(syscall_id3)
+        global verbose
+        if verbose >= 2:
+            if call_id == -1:
+                if syscall_common == -1:
+                    print "%s: %d,%d,%d" % (syscall_name, syscall_arm, syscall_x86, syscall_mips)
+                else:
+                    print "%s: %d" % (syscall_name, syscall_common)
+            else:
+                if syscall_common == -1:
+                    print "%s(%d): %d,%d,%d" % (syscall_name, call_id, syscall_arm, syscall_x86, syscall_mips)
+                else:
+                    print "%s(%d): %d" % (syscall_name, call_id, syscall_common)
 
-        t = { "id"     : syscall_id,
-              "id2"    : syscall_id2,
-              "id3"    : syscall_id3,
+        t = { "armid"  : syscall_arm,
+              "x86id"  : syscall_x86,
+              "mipsid" : syscall_mips,
+              "common" : syscall_common,
               "cid"    : call_id,
               "name"   : syscall_name,
               "func"   : syscall_func,
               "params" : syscall_params,
               "decl"   : "%-15s  %s (%s);" % (return_type, syscall_func, params) }
-
         self.syscalls.append(t)
 
     def parse_file(self, file_path):
