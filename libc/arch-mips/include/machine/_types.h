@@ -1,4 +1,4 @@
-/*	$OpenBSD: _types.h,v 1.2 2006/01/13 17:50:06 millert Exp $	*/
+/*	$OpenBSD: _types.h,v 1.5 2008/07/21 20:50:54 martynas Exp $	*/
 
 /*-
  * Copyright (c) 1990, 1993
@@ -32,31 +32,16 @@
  *	@(#)ansi.h	8.2 (Berkeley) 1/4/94
  */
 
-#ifndef _I386__TYPES_H_
-#define _I386__TYPES_H_
+#ifndef _MIPS64__TYPES_H_
+#define _MIPS64__TYPES_H_
 
-/* the kernel defines size_t as unsigned int, but g++ wants it to be unsigned long */
-#ifndef _SIZE_T_DEFINED_
-#  define _SIZE_T_DEFINED_
-#  ifdef __ANDROID__
-     typedef unsigned int  size_t;
-#  else
-     typedef unsigned long  size_t;
-#  endif
-#endif
-#if !defined(_SSIZE_T) && !defined(_SSIZE_T_DEFINED_)
-#define _SSIZE_T
-#define _SSIZE_T_DEFINED_
-typedef long int       ssize_t;
-#endif
-#ifndef _PTRDIFF_T
-#define _PTRDIFF_T
-#  ifdef __ANDROID__
-     typedef int            ptrdiff_t;
-#  else
-     typedef long           ptrdiff_t;
-#  endif
-#endif
+/*
+ *  We need to handle the various ISA levels for sizes.
+ */
+#define	_MIPS_ISA_MIPS1	1	/* R2000/R3000 */
+#define	_MIPS_ISA_MIPS2	2	/* R4000/R6000 */
+#define	_MIPS_ISA_MIPS3	3	/* R4000 */
+#define	_MIPS_ISA_MIPS4	4	/* TFP (R1x000) */
 
 /* 7.18.1.1 Exact-width integer types */
 typedef	__signed char		__int8_t;
@@ -91,15 +76,21 @@ typedef	__int64_t		__int_fast64_t;
 typedef	__uint64_t		__uint_fast64_t;
 
 /* 7.18.1.4 Integer types capable of holding object pointers */
-typedef	int 			__intptr_t;
-typedef	unsigned int 	__uintptr_t;
+typedef	long			__intptr_t;
+typedef	unsigned long		__uintptr_t;
 
 /* 7.18.1.5 Greatest-width integer types */
 typedef	__int64_t		__intmax_t;
 typedef	__uint64_t		__uintmax_t;
 
 /* Register size */
+#if (_MIPS_ISA == _MIPS_ISA_MIPS3 || _MIPS_ISA == _MIPS_ISA_MIPS4)
+typedef __int64_t		__register_t;
+typedef __int64_t		f_register_t;	/* XXX */
+#else
 typedef __int32_t		__register_t;
+typedef __int32_t		f_register_t;	/* XXX */
+#endif
 
 /* VM system types */
 typedef unsigned long		__vaddr_t;
@@ -110,7 +101,12 @@ typedef unsigned long		__psize_t;
 /* Standard system types */
 typedef int			__clock_t;
 typedef int			__clockid_t;
+typedef double			__double_t;
+typedef float			__float_t;
+typedef long long		__off_t;
 typedef long			__ptrdiff_t;
+/*typedef	unsigned long		__size_t;*/
+typedef	long			__ssize_t;
 typedef	int			__time_t;
 typedef int			__timer_t;
 #if defined(__GNUC__) && __GNUC__ >= 3
@@ -128,8 +124,22 @@ typedef	int			__rune_t;
 typedef	void *			__wctrans_t;
 typedef	void *			__wctype_t;
 
-/* Feature test macros */
-#define __HAVE_CPUINFO
-#define __HAVE_MUTEX
+#ifdef __MIPSEB__
+#define _BYTE_ORDER _BIG_ENDIAN
+#else
+#define _BYTE_ORDER _LITTLE_ENDIAN
+#endif
 
-#endif	/* _I386__TYPES_H_ */
+#if defined(_KERNEL)
+typedef struct label_t {
+	__register_t val[14];
+} label_t;
+#endif
+
+/* XXX check why this still has to be defined. pmap.c issue? */
+#define __SWAP_BROKEN
+
+/* Feature test macros */
+#define __HAVE_TIMECOUNTER
+
+#endif	/* _MIPS64__TYPES_H_ */
