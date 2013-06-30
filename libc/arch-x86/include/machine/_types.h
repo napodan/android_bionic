@@ -38,7 +38,7 @@
 /* the kernel defines size_t as unsigned int, but g++ wants it to be unsigned long */
 #ifndef _SIZE_T_DEFINED_
 #  define _SIZE_T_DEFINED_
-#  ifdef ANDROID
+#  ifdef __ANDROID__
      typedef unsigned int  size_t;
 #  else
      typedef unsigned long  size_t;
@@ -51,10 +51,12 @@ typedef long int       ssize_t;
 #endif
 #ifndef _PTRDIFF_T
 #define _PTRDIFF_T
-typedef long           ptrdiff_t;
+#  ifdef __ANDROID__
+     typedef int            ptrdiff_t;
+#  else
+     typedef long           ptrdiff_t;
+#  endif
 #endif
-
-#include <linux/types.h>
 
 /* 7.18.1.1 Exact-width integer types */
 typedef	__signed char		__int8_t;
