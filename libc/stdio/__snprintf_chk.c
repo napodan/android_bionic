@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,50 +26,34 @@
  * SUCH DAMAGE.
  */
 
-/* implement flockfile(), ftrylockfile() and funlockfile()
- *
- * we can't use the OpenBSD implementation which uses kernel-specific
- * APIs not available on Linux.
- *
- * Instead, we use a pthread_mutex_t within the FILE* internal state.
- * See fileext.h for details.
- *
- * the behaviour, if fclose() is called while the corresponding
- * file is locked is totally undefined.
- */
 #include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include "fileext.h"
+#include <stdarg.h>
 
-
-void
-flockfile(FILE * fp)
+/*
+ * Runtime implementation of __builtin____snprintf_chk.
+ *
+ * See
+ *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+ *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
+ * for details.
+ *
+ * This snprintf check is called if _FORTIFY_SOURCE is defined and
+ * greater than 0.
+ */
+int __snprintf_chk(
+        char *dest,
+        size_t supplied_size,
+        int flags,
+        size_t dest_len_from_compiler,
+        const char *format, ...)
 {
-    if (fp != NULL) {
-        _FLOCK_LOCK(fp);
-    }
-}
+    va_list va;
+    int retval;
 
+    va_start(va, format);
+    retval = __vsnprintf_chk(dest, supplied_size, flags,
+                             dest_len_from_compiler, format, va);
+    va_end(va);
 
-int
-ftrylockfile(FILE *fp)
-{
-    /* The specification for ftrylockfile() says it returns 0 on success,
-     * or non-zero on error. So return an errno code directly on error.
-     */
-    int  ret = EINVAL;
-
-    if (fp != NULL) {
-        ret = _FLOCK_TRYLOCK(fp);
-    }
-    return ret;
-}
-
-void
-funlockfile(FILE * fp)
-{
-    if (fp != NULL) {
-        _FLOCK_UNLOCK(fp);
-    }
+    return retval;
 }
