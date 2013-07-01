@@ -170,6 +170,7 @@ __END_DECLS
 #define	__SOFF	0x1000		/* set iff _offset is in fact correct */
 #define	__SMOD	0x2000		/* true => fgetln modified _p text */
 #define	__SALC	0x4000		/* allocate string space dynamically */
+#define	__SIGN	0x8000		/* ignore this file in _fwalk */
 
 /*
  * The following three definitions are for ANSI C, which took them
@@ -230,12 +231,16 @@ int	 fgetc(FILE *);
 int	 fgetpos(FILE *, fpos_t *);
 char	*fgets(char *, int, FILE *);
 FILE	*fopen(const char *, const char *);
-int	 fprintf(FILE *, const char *, ...);
+int	 fprintf(FILE *, const char *, ...)
+		__attribute__((__format__ (printf, 2, 3)))
+		__attribute__((__nonnull__ (2)));
 int	 fputc(int, FILE *);
 int	 fputs(const char *, FILE *);
 size_t	 fread(void *, size_t, size_t, FILE *);
 FILE	*freopen(const char *, const char *, FILE *);
-int	 fscanf(FILE *, const char *, ...);
+int	 fscanf(FILE *, const char *, ...)
+		__attribute__ ((__format__ (scanf, 2, 3)))
+		__attribute__ ((__nonnull__ (2)));
 int	 fseek(FILE *, long, int);
 int	 fseeko(FILE *, off_t, int);
 int	 fsetpos(FILE *, const fpos_t *);
@@ -252,24 +257,38 @@ extern int sys_nerr;			/* perror(3) external variables */
 extern char *sys_errlist[];
 #endif
 void	 perror(const char *);
-int	 printf(const char *, ...);
+int	 printf(const char *, ...)
+		__attribute__((__format__ (printf, 1, 2)))
+		__attribute__((__nonnull__ (1)));
 int	 putc(int, FILE *);
 int	 putchar(int);
 int	 puts(const char *);
 int	 remove(const char *);
 int	 rename(const char *, const char *);
 void	 rewind(FILE *);
-int	 scanf(const char *, ...);
+int	 scanf(const char *, ...)
+		__attribute__ ((__format__ (scanf, 1, 2)))
+		__attribute__ ((__nonnull__ (1)));
 void	 setbuf(FILE *, char *);
 int	 setvbuf(FILE *, char *, int, size_t);
-int	 sprintf(char *, const char *, ...);
-int	 sscanf(const char *, const char *, ...);
+int	 sprintf(char *, const char *, ...)
+		__attribute__((__format__ (printf, 2, 3)))
+		__attribute__((__nonnull__ (2)));
+int	 sscanf(const char *, const char *, ...)
+		__attribute__ ((__format__ (scanf, 2, 3)))
+		__attribute__ ((__nonnull__ (2)));
 FILE	*tmpfile(void);
 char	*tmpnam(char *);
 int	 ungetc(int, FILE *);
-int	 vfprintf(FILE *, const char *, __va_list);
-int	 vprintf(const char *, __va_list);
-int	 vsprintf(char *, const char *, __va_list);
+int	 vfprintf(FILE *, const char *, __va_list)
+		__attribute__((__format__ (printf, 2, 0)))
+		__attribute__((__nonnull__ (2)));
+int	 vprintf(const char *, __va_list)
+		__attribute__((__format__ (printf, 1, 0)))
+		__attribute__((__nonnull__ (1)));
+int	 vsprintf(char *, const char *, __va_list)
+		__attribute__((__format__ (printf, 2, 0)))
+		__attribute__((__nonnull__ (2)));
 
 #if __ISO_C_VISIBLE >= 1999 || __BSD_VISIBLE
 int	 snprintf(char *, size_t, const char *, ...)
@@ -406,38 +425,43 @@ static __inline int __sputc(int _c, FILE *_p) {
 #define	__sclearerr(p)	((void)((p)->_flags &= ~(__SERR|__SEOF)))
 #define	__sfileno(p)	((p)->_file)
 
-#define	feof(p)		__sfeof(p)
-#define	ferror(p)	__sferror(p)
+extern	int __isthreaded;
 
-#ifndef _POSIX_THREADS
-#define	clearerr(p)	__sclearerr(p)
-#endif
+#define	feof(p)		(!__isthreaded ? __sfeof(p) : (feof)(p))
+#define	ferror(p)	(!__isthreaded ? __sferror(p) : (ferror)(p))
+#define	clearerr(p)	(!__isthreaded ? __sclearerr(p) : (clearerr)(p))
 
 #if __POSIX_VISIBLE
-#define	fileno(p)	__sfileno(p)
+#define	fileno(p)	(!__isthreaded ? __sfileno(p) : (fileno)(p))
 #endif
 
+#define	getc(fp)	(!__isthreaded ? __sgetc(fp) : (getc)(fp))
+
+#if __BSD_VISIBLE
+/*
+ * The macro implementations of putc and putc_unlocked are not
+ * fully POSIX compliant; they do not set errno on failure
+ */
+#define putc(x, fp)	(!__isthreaded ? __sputc(x, fp) : (putc)(x, fp))
+#endif /* __BSD_VISIBLE */
+
 #ifndef lint
-#ifndef _POSIX_THREADS
-#define	getc(fp)	__sgetc(fp)
-#endif /* _POSIX_THREADS */
+#if __POSIX_VISIBLE >= 199506
 #define	getc_unlocked(fp)	__sgetc(fp)
 /*
  * The macro implementations of putc and putc_unlocked are not
  * fully POSIX compliant; they do not set errno on failure
  */
 #if __BSD_VISIBLE
-#ifndef _POSIX_THREADS
-#define putc(x, fp)	__sputc(x, fp)
-#endif /* _POSIX_THREADS */
 #define putc_unlocked(x, fp)	__sputc(x, fp)
 #endif /* __BSD_VISIBLE */
+#endif /* __POSIX_VISIBLE >= 199506 */
 #endif /* lint */
 
 #define	getchar()	getc(stdin)
 #define	putchar(x)	putc(x, stdout)
-#define getchar_unlocked()	getc_unlocked(stdin)
-#define putchar_unlocked(c)	putc_unlocked(c, stdout)
+#define	getchar_unlocked()	getc_unlocked(stdin)
+#define	putchar_unlocked(c)	putc_unlocked(c, stdout)
 
 #ifdef _GNU_SOURCE
 /*
@@ -446,8 +470,93 @@ static __inline int __sputc(int _c, FILE *_p) {
  * fdprintf is a better name, and some programs that use fdprintf use a
  * #define fdprintf dprintf for compatibility
  */
-int fdprintf(int, const char*, ...);
-int vfdprintf(int, const char*, __va_list);
+__BEGIN_DECLS
+int fdprintf(int, const char*, ...)
+		__attribute__((__format__ (printf, 2, 3)))
+		__attribute__((__nonnull__ (2)));
+int vfdprintf(int, const char*, __va_list)
+		__attribute__((__format__ (printf, 2, 0)))
+		__attribute__((__nonnull__ (2)));
+__END_DECLS
 #endif /* _GNU_SOURCE */
+
+#if defined(__BIONIC_FORTIFY_INLINE)
+
+__BIONIC_FORTIFY_INLINE
+__attribute__((__format__ (printf, 3, 0)))
+__attribute__((__nonnull__ (3)))
+int vsnprintf(char *dest, size_t size, const char *format, __va_list ap)
+{
+    return __builtin___vsnprintf_chk(dest, size, 0,
+        __builtin_object_size(dest, 0), format, ap);
+}
+
+__BIONIC_FORTIFY_INLINE
+__attribute__((__format__ (printf, 2, 0)))
+__attribute__((__nonnull__ (2)))
+int vsprintf(char *dest, const char *format, __va_list ap)
+{
+    return __builtin___vsprintf_chk(dest, 0,
+        __builtin_object_size(dest, 0), format, ap);
+}
+
+__BIONIC_FORTIFY_INLINE
+__attribute__((__format__ (printf, 3, 4)))
+__attribute__((__nonnull__ (3)))
+int snprintf(char *str, size_t size, const char *format, ...)
+{
+    return __builtin___snprintf_chk(str, size, 0,
+        __builtin_object_size(str, 0), format, __builtin_va_arg_pack());
+}
+
+__BIONIC_FORTIFY_INLINE
+__attribute__((__format__ (printf, 2, 3)))
+__attribute__((__nonnull__ (2)))
+int sprintf(char *dest, const char *format, ...)
+{
+    return __builtin___sprintf_chk(dest, 0,
+        __builtin_object_size(dest, 0), format, __builtin_va_arg_pack());
+}
+
+extern char *__fgets_real(char *, int, FILE *)
+    __asm__(__USER_LABEL_PREFIX__ "fgets");
+extern void __fgets_too_big_error()
+    __attribute__((__error__("fgets called with size bigger than buffer")));
+extern void __fgets_too_small_error()
+    __attribute__((__error__("fgets called with size less than zero")));
+extern char *__fgets_chk(char *, int, FILE *, size_t);
+
+__BIONIC_FORTIFY_INLINE
+char *fgets(char *dest, int size, FILE *stream)
+{
+    size_t bos = __builtin_object_size(dest, 0);
+
+    // Compiler can prove, at compile time, that the passed in size
+    // is always negative. Force a compiler error.
+    if (__builtin_constant_p(size) && (size < 0)) {
+        __fgets_too_small_error();
+    }
+
+    // Compiler doesn't know destination size. Don't call __fgets_chk
+    if (bos == __BIONIC_FORTIFY_UNKNOWN_SIZE) {
+        return __fgets_real(dest, size, stream);
+    }
+
+    // Compiler can prove, at compile time, that the passed in size
+    // is always <= the actual object size. Don't call __fgets_chk
+    if (__builtin_constant_p(size) && (size <= bos)) {
+        return __fgets_real(dest, size, stream);
+    }
+
+    // Compiler can prove, at compile time, that the passed in size
+    // is always > the actual object size. Force a compiler error.
+    if (__builtin_constant_p(size) && (size > bos)) {
+        __fgets_too_big_error();
+    }
+
+    return __fgets_chk(dest, size, stream, bos);
+}
+
+#endif /* defined(__BIONIC_FORTIFY_INLINE) */
 
 #endif /* _STDIO_H_ */

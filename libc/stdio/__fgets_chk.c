@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,50 +26,35 @@
  * SUCH DAMAGE.
  */
 
-/* implement flockfile(), ftrylockfile() and funlockfile()
- *
- * we can't use the OpenBSD implementation which uses kernel-specific
- * APIs not available on Linux.
- *
- * Instead, we use a pthread_mutex_t within the FILE* internal state.
- * See fileext.h for details.
- *
- * the behaviour, if fclose() is called while the corresponding
- * file is locked is totally undefined.
- */
 #include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include "fileext.h"
+#include <stdlib.h>
+#include <private/logd.h>
 
-
-void
-flockfile(FILE * fp)
+/*
+ * __fgets_chk. Called in place of fgets() when we know the
+ * size of the buffer we're writing into.
+ *
+ * See
+ *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+ * for details.
+ *
+ * This fgets check is called if _FORTIFY_SOURCE is defined and
+ * greater than 0.
+ */
+char *__fgets_chk(char *dest, int supplied_size,
+                  FILE *stream, size_t dest_len_from_compiler)
 {
-    if (fp != NULL) {
-        _FLOCK_LOCK(fp);
+    if (supplied_size < 0) {
+        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
+            "*** fgets buffer size less than 0 ***\n");
+        abort();
     }
-}
 
-
-int
-ftrylockfile(FILE *fp)
-{
-    /* The specification for ftrylockfile() says it returns 0 on success,
-     * or non-zero on error. So return an errno code directly on error.
-     */
-    int  ret = EINVAL;
-
-    if (fp != NULL) {
-        ret = _FLOCK_TRYLOCK(fp);
+    if (((size_t) supplied_size) > dest_len_from_compiler) {
+        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
+            "*** fgets buffer overflow detected ***\n");
+        abort();
     }
-    return ret;
-}
 
-void
-funlockfile(FILE * fp)
-{
-    if (fp != NULL) {
-        _FLOCK_UNLOCK(fp);
-    }
+    return fgets(dest, supplied_size, stream);
 }
