@@ -130,7 +130,7 @@ static int __write_to_log_init(log_id_t log_id, struct iovec *vec)
     return -1;
 }
 
-static int __android_log_write(int prio, const char *tag, const char *msg)
+int __libc_android_log_write(int prio, const char *tag, const char *msg)
 {
     struct iovec vec[3];
     log_id_t log_id = LOG_ID_MAIN;
@@ -159,7 +159,7 @@ int __libc_android_log_vprint(int prio, const char *tag, const char *fmt,
 
     vsnprintf(buf, LOG_BUF_SIZE, fmt, ap);
 
-    return __android_log_write(prio, tag, buf);
+    return __libc_android_log_write(prio, tag, buf);
 }
 
 int __libc_android_log_print(int prio, const char *tag, const char *fmt, ...)
@@ -171,7 +171,7 @@ int __libc_android_log_print(int prio, const char *tag, const char *fmt, ...)
     vsnprintf(buf, LOG_BUF_SIZE, fmt, ap);
     va_end(ap);
 
-    return __android_log_write(prio, tag, buf);
+    return __libc_android_log_write(prio, tag, buf);
 }
 
 int __libc_android_log_assert(const char *cond, const char *tag,
@@ -184,7 +184,7 @@ int __libc_android_log_assert(const char *cond, const char *tag,
     vsnprintf(buf, LOG_BUF_SIZE, fmt, ap);
     va_end(ap);
 
-    __android_log_write(ANDROID_LOG_FATAL, tag, buf);
+    __libc_android_log_write(ANDROID_LOG_FATAL, tag, buf);
 
     exit(1);
 

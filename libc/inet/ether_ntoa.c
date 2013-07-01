@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2010 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,50 +26,30 @@
  * SUCH DAMAGE.
  */
 
-/* implement flockfile(), ftrylockfile() and funlockfile()
- *
- * we can't use the OpenBSD implementation which uses kernel-specific
- * APIs not available on Linux.
- *
- * Instead, we use a pthread_mutex_t within the FILE* internal state.
- * See fileext.h for details.
- *
- * the behaviour, if fclose() is called while the corresponding
- * file is locked is totally undefined.
- */
 #include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include "fileext.h"
+#include <sys/types.h>
+#include <net/if_ether.h>
 
-
-void
-flockfile(FILE * fp)
+/*
+ * Convert Ethernet address to standard hex-digits-and-colons printable form.
+ * Re-entrant version (GNU extensions).
+ */
+char *
+ether_ntoa_r (const struct ether_addr *addr, char * buf)
 {
-    if (fp != NULL) {
-        _FLOCK_LOCK(fp);
-    }
+    snprintf(buf, 18, "%02x:%02x:%02x:%02x:%02x:%02x",
+            addr->ether_addr_octet[0], addr->ether_addr_octet[1],
+            addr->ether_addr_octet[2], addr->ether_addr_octet[3],
+            addr->ether_addr_octet[4], addr->ether_addr_octet[5]);
+    return buf;
 }
 
-
-int
-ftrylockfile(FILE *fp)
+/*
+ * Convert Ethernet address to standard hex-digits-and-colons printable form.
+ */
+char *
+ether_ntoa (const struct ether_addr *addr)
 {
-    /* The specification for ftrylockfile() says it returns 0 on success,
-     * or non-zero on error. So return an errno code directly on error.
-     */
-    int  ret = EINVAL;
-
-    if (fp != NULL) {
-        ret = _FLOCK_TRYLOCK(fp);
-    }
-    return ret;
-}
-
-void
-funlockfile(FILE * fp)
-{
-    if (fp != NULL) {
-        _FLOCK_UNLOCK(fp);
-    }
+    static char buf[18];
+    return ether_ntoa_r(addr, buf);
 }
