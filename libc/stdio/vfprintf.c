@@ -100,8 +100,8 @@ __sbprintf(FILE *fp, const char *fmt, va_list ap)
 	fake._lbfsize = 0;	/* not actually used, but Just In Case */
 
 	/* do the work, then copy any error status */
-	ret = vfprintf(&fake, fmt, ap);
-	if (ret >= 0 && fflush(&fake))
+	ret = __vfprintf(&fake, fmt, ap);
+	if (ret >= 0 && __sflush(&fake))
 		ret = EOF;
 	if (fake._flags & __SERR)
 		fp->_flags |= __SERR;
@@ -158,6 +158,17 @@ static  int  _my_isnan(double);
 int
 vfprintf(FILE *fp, const char *fmt0, __va_list ap)
 {
+	int ret;
+
+	FLOCKFILE(fp);
+	ret = __vfprintf(fp, fmt0, ap);
+	FUNLOCKFILE(fp);
+	return (ret);
+}
+
+int
+__vfprintf(FILE *fp, const char *fmt0, __va_list ap)
+{
 	char *fmt;	/* format string */
 	int ch;	/* character from fmt */
 	int n, m, n2;	/* handy integers (short term usage) */
@@ -203,9 +214,9 @@ vfprintf(FILE *fp, const char *fmt0, __va_list ap)
 	 * below longer.
 	 */
 #define	PADSIZE	16		/* pad chunk size */
-	static char blanks[PADSIZE] =
+	static const char blanks[PADSIZE] =
 	 {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '};
-	static char zeroes[PADSIZE] =
+	static const char zeroes[PADSIZE] =
 	 {'0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0'};
 
 	/*
@@ -548,7 +559,7 @@ reswitch:	switch (ch) {
 #endif /* FLOATING_POINT */
 /* the Android security team suggests removing support for %n
  * since it has no real practical value, and could lead to
- * running malicious code (for really bugy programs that
+ * running malicious code (for really buggy programs that
  * send to printf() user-generated formatting strings).
  */
 #if 0
@@ -816,6 +827,7 @@ error:
 		munmap(argtable, argtablesiz);
 		argtable = NULL;
 	}
+        va_end(orgap);
 	return (__sferror(fp) ? EOF : ret);
 	/* NOTREACHED */
 }
@@ -1219,7 +1231,6 @@ cvt(double value, int ndigits, int flags, char *sign, int *decpt, int ch,
 {
 	int mode, dsgn;
 	char *digits, *bp, *rve;
-	static  char  temp[64];
 
 	if (ch == 'f') {
 		mode = 3;		/* ndigits after the decimal point */

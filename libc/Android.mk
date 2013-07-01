@@ -140,6 +140,11 @@ libc_common_src_files := \
 	stdio/vsscanf.c \
 	stdio/wbuf.c \
 	stdio/wsetup.c \
+	stdio/__fgets_chk.c \
+	stdio/__snprintf_chk.c \
+	stdio/__sprintf_chk.c \
+	stdio/__vsnprintf_chk.c \
+	stdio/__vsprintf_chk.c \
 	stdlib/_rand48.c \
 	stdlib/assert.c \
 	stdlib/atexit.c \
@@ -368,7 +373,6 @@ libc_common_src_files += \
 # can set breakpoints in them without messing
 # up any thumb code.
 libc_common_src_files += \
-	bionic/pthread.c.arm \
 	bionic/pthread-atfork.c.arm \
 	bionic/pthread-rwlocks.c.arm \
 	bionic/pthread-timers.c.arm \
@@ -384,18 +388,19 @@ libc_arch_static_src_files := \
 
 libc_arch_dynamic_src_files := \
 	arch-arm/bionic/exidx_dynamic.c
-else # !arm
+endif # arm
 
 ifeq ($(TARGET_ARCH),x86)
 libc_common_src_files += \
 	arch-x86/bionic/__get_sp.S \
 	arch-x86/bionic/__get_tls.c \
 	arch-x86/bionic/__set_tls.c \
-	arch-x86/bionic/atomics_x86.S \
 	arch-x86/bionic/clone.S \
 	arch-x86/bionic/_exit_with_stack_teardown.S \
+	arch-x86/bionic/futex_x86.S \
 	arch-x86/bionic/setjmp.S \
 	arch-x86/bionic/_setjmp.S \
+	arch-x86/bionic/sigsetjmp.S \
 	arch-x86/bionic/vfork.S \
 	arch-x86/bionic/syscall.S \
 	arch-x86/string/bcopy_wrapper.S \
@@ -407,7 +412,7 @@ libc_common_src_files += \
 	arch-x86/string/strcmp_wrapper.S \
 	arch-x86/string/strncmp_wrapper.S \
 	arch-x86/string/strlen_wrapper.S \
-	bionic/pthread.c \
+	string/strcpy.c \
 	bionic/pthread-atfork.c \
 	bionic/pthread-rwlocks.c \
 	bionic/pthread-timers.c \
@@ -421,47 +426,53 @@ libc_arch_static_src_files := \
 	arch-x86/bionic/dl_iterate_phdr_static.c
 
 libc_arch_dynamic_src_files :=
-else # !x86
+endif # x86
 
-ifeq ($(TARGET_ARCH),sh)
+ifeq ($(TARGET_ARCH),mips)
 libc_common_src_files += \
-	arch-sh/bionic/__get_pc.S \
-	arch-sh/bionic/__get_sp.S \
-	arch-sh/bionic/_exit_with_stack_teardown.S \
-	arch-sh/bionic/_setjmp.S \
-	arch-sh/bionic/atomics_sh.c \
-	arch-sh/bionic/atomic_cmpxchg.S \
-	arch-sh/bionic/clone.S \
-	arch-sh/bionic/pipe.S \
-	arch-sh/bionic/memcpy.S \
-	arch-sh/bionic/memset.S \
-	arch-sh/bionic/bzero.S \
-	arch-sh/bionic/setjmp.S \
-	arch-sh/bionic/sigsetjmp.S \
-	arch-sh/bionic/syscall.S \
-	arch-sh/bionic/memmove.S \
-	arch-sh/bionic/__set_tls.c \
-	arch-sh/bionic/__get_tls.c \
-	arch-sh/bionic/ffs.S \
+	arch-mips/bionic/__get_sp.S \
+	arch-mips/bionic/__get_tls.c \
+	arch-mips/bionic/__set_tls.c \
+	arch-mips/bionic/_exit_with_stack_teardown.S \
+	arch-mips/bionic/_setjmp.S \
+	arch-mips/bionic/futex_mips.S \
+	arch-mips/bionic/bzero.S \
+	arch-mips/bionic/cacheflush.c \
+	arch-mips/bionic/clone.S \
+	arch-mips/bionic/ffs.S \
+	arch-mips/bionic/memcmp16.S \
+	arch-mips/bionic/memmove.c \
+	arch-mips/bionic/pipe.S \
+	arch-mips/bionic/setjmp.S \
+	arch-mips/bionic/sigsetjmp.S \
+	arch-mips/bionic/vfork.S
+
+libc_common_src_files += \
+	arch-mips/string/memset.S \
+	arch-mips/string/memcpy.S \
+	arch-mips/string/mips_strlen.c
+
+libc_common_src_files += \
 	string/bcopy.c \
-	string/strcmp.c \
-	string/strncmp.c \
 	string/memcmp.c \
-	string/strlen.c \
-	bionic/pthread.c \
+	string/strcmp.c \
+	string/strcpy.c \
+	string/strncmp.c
+
+libc_common_src_files += \
 	bionic/pthread-atfork.c \
 	bionic/pthread-rwlocks.c \
 	bionic/pthread-timers.c \
-	bionic/ptrace.c \
-	unistd/socketcalls.c
+	bionic/ptrace.c
 
 libc_static_common_src_files += \
-        bionic/pthread.c \
+	bionic/pthread.c
 
-endif # sh
+libc_arch_static_src_files := \
+	bionic/dl_iterate_phdr_static.c
 
-endif # !x86
-endif # !arm
+libc_arch_dynamic_src_files :=
+endif # mips
 
 # Define some common cflags
 # ========================================================
@@ -503,9 +514,26 @@ ifeq ($(TARGET_ARCH),arm)
   ifeq ($(ARCH_ARM_HAVE_TLS_REGISTER),true)
     libc_common_cflags += -DHAVE_ARM_TLS_REGISTER
   endif
-else # !arm
-  libc_crt_target_cflags :=
 endif # !arm
+
+ifeq ($(TARGET_ARCH),x86)
+  libc_common_cflags += -DSOFTFLOAT
+  libc_crt_target_cflags :=
+  ifeq ($(ARCH_X86_HAVE_SSE2),true)
+      libc_crt_target_cflags += -DUSE_SSE2=1
+  endif
+  ifeq ($(ARCH_X86_HAVE_SSSE3),true)
+      libc_crt_target_cflags += -DUSE_SSSE3=1
+  endif
+endif # x86
+
+ifeq ($(TARGET_ARCH),mips)
+  ifneq ($(ARCH_MIPS_HAS_FPU),true)
+    libc_common_cflags += -DSOFTFLOAT
+  endif
+  libc_common_cflags += -fstrict-aliasing
+  libc_crt_target_cflags := $(TARGET_GLOBAL_CFLAGS)
+endif # mips
 
 # Define ANDROID_SMP appropriately.
 ifeq ($(TARGET_CPU_SMP),true)
