@@ -189,7 +189,6 @@ libc_common_src_files := \
 	string/strcat.c \
 	string/strchr.c \
 	string/strcoll.c \
-	string/strcpy.c \
 	string/strcspn.c \
 	string/strdup.c \
 	string/strlcat.c \
@@ -205,6 +204,16 @@ libc_common_src_files := \
 	string/strstr.c \
 	string/strtok.c \
 	string/strtotimeval.c \
+	string/__memcpy_chk.c \
+	string/__memmove_chk.c \
+	string/__memset_chk.c \
+	string/__strcat_chk.c \
+	string/__strcpy_chk.c \
+	string/__strlcat_chk.c \
+	string/__strlcpy_chk.c \
+	string/__strlen_chk.c \
+	string/__strncat_chk.c \
+	string/__strncpy_chk.c \
 	wchar/wcpcpy.c \
 	wchar/wcpncpy.c \
 	wchar/wcscasecmp.c \
@@ -369,10 +378,11 @@ libc_common_src_files += \
 	arch-arm/bionic/setjmp.S \
 	arch-arm/bionic/sigsetjmp.S \
 	arch-arm/bionic/strlen.c.arm \
+	arch-arm/bionic/strcpy.S \
+	arch-arm/bionic/strcmp.S \
 	arch-arm/bionic/syscall.S \
 	string/memmove.c.arm \
 	string/bcopy.c \
-	string/strcmp.c \
 	string/strncmp.c \
 	unistd/socketcalls.c
 
@@ -581,7 +591,8 @@ endif
 libc_common_c_includes := \
 		$(LOCAL_PATH)/stdlib  \
 		$(LOCAL_PATH)/string  \
-		$(LOCAL_PATH)/stdio
+		$(LOCAL_PATH)/stdio   \
+		external/safe-iop/include
 
 
 # Define the libc run-time (crt) support object files that must be built,
