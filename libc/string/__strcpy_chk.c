@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,22 +25,32 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#undef _FORTIFY_SOURCE
-#include <string.h>
-#include <strings.h>
 
-void *memmove(void *dst, const void *src, size_t n)
+#include <string.h>
+#include <stdlib.h>
+#include <private/logd.h>
+
+/*
+ * Runtime implementation of __builtin____strcpy_chk.
+ *
+ * See
+ *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+ *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
+ * for details.
+ *
+ * This strcpy check is called if _FORTIFY_SOURCE is defined and
+ * greater than 0.
+ */
+char *__strcpy_chk (char *dest, const char *src, size_t dest_len)
 {
-  const char *p = src;
-  char *q = dst;
-  /* We can use the optimized memcpy if the source and destination
-   * don't overlap.
-   */
-  if (__builtin_expect(((q < p) && ((size_t)(p - q) >= n))
-                    || ((p < q) && ((size_t)(q - p) >= n)), 1)) {
-    return memcpy(dst, src, n);
-  } else {
-    bcopy(src, dst, n);
-    return dst;
-  }
+    // TODO: optimize so we don't scan src twice.
+    size_t src_len = strlen(src) + 1;
+    if (src_len > dest_len) {
+        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
+            "*** strcpy buffer overflow detected ***\n");
+        __libc_android_log_event_uid(BIONIC_EVENT_STRCPY_BUFFER_OVERFLOW);
+        abort();
+    }
+
+    return strcpy(dest, src);
 }
