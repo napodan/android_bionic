@@ -48,12 +48,23 @@
 
 #include <pthread.h>
 
+/* IMPORTANT IMPORTANT IMPORTANT: TECHNICAL NOTE
+ *
+ * Some of the functions below can be called when our malloc() implementation
+ * has detected that the heap is corrupted, or even from a signal handler.
+ *
+ * These functions should *not* use a function that allocates heap memory
+ * or is not signal-safe. Using direct system calls is acceptable, and we
+ * also assume that pthread_mutex_lock/unlock can be used too.
+ */
+
 #define LOG_BUF_SIZE    1024
 
 typedef enum {
     LOG_ID_NONE = 0,
     LOG_ID_MAIN,
     LOG_ID_RADIO,
+    LOG_ID_EVENTS,
     LOG_ID_MAX
 } log_id_t;
 
@@ -74,12 +85,14 @@ static pthread_mutex_t log_init_lock = PTHREAD_MUTEX_INITIALIZER;
 static log_channel_t log_channels[LOG_ID_MAX] = {
     { __write_to_log_null, -1, NULL },
     { __write_to_log_init, -1, "/dev/"LOGGER_LOG_MAIN },
-    { __write_to_log_init, -1, "/dev/"LOGGER_LOG_RADIO }
+    { __write_to_log_init, -1, "/dev/"LOGGER_LOG_RADIO },
+    { __write_to_log_init, -1, "/dev/"LOGGER_LOG_EVENTS }
 };
 
+/* Important: see technical note at start of source file */
 static int __write_to_log_null(log_id_t log_id, struct iovec *vec)
 {
-    /* 
+    /*
      * ALTERED behaviour from previous version
      * always returns successful result
      */
@@ -97,23 +110,21 @@ static int __write_to_log_null(log_id_t log_id, struct iovec *vec)
  *  it's supposed, that log_id contains valid id always.
  *  this check must be performed in higher level functions
  */
+/* Important: see technical note at start of source file */
 static int __write_to_log_kernel(log_id_t log_id, struct iovec *vec)
 {
-    ssize_t ret;
-
-    do {
-        ret = writev(log_channels[log_id].fd, vec, 3);
-    } while ((ret < 0) && (errno == EINTR));
-
-    return ret;
+    return TEMP_FAILURE_RETRY( writev(log_channels[log_id].fd, vec, 3) );
 }
 
+/* Important: see technical note at start of source file */
 static int __write_to_log_init(log_id_t log_id, struct iovec *vec)
 {
     if ((LOG_ID_NONE < log_id) && (log_id < LOG_ID_MAX)) {
+        int fd;
+
         pthread_mutex_lock(&log_init_lock);
 
-        int fd = open(log_channels[log_id].path, O_WRONLY);
+        fd = TEMP_FAILURE_RETRY(open(log_channels[log_id].path, O_WRONLY));
 
         log_channels[log_id].logger =
             (fd < 0) ? __write_to_log_null : __write_to_log_kernel;
@@ -130,6 +141,8 @@ static int __write_to_log_init(log_id_t log_id, struct iovec *vec)
     return -1;
 }
 
+/* Important: see technical note at start of source file */
+__LIBC_HIDDEN__
 int __libc_android_log_write(int prio, const char *tag, const char *msg)
 {
     struct iovec vec[3];
@@ -151,7 +164,11 @@ int __libc_android_log_write(int prio, const char *tag, const char *msg)
     return log_channels[log_id].logger(log_id, vec);
 }
 
-
+/* The functions below are not designed to be called from a heap panic
+ * function or from a signal handler. As such, they are free to use complex
+ * C library functions like vsnprintf()
+ */
+__LIBC_HIDDEN__
 int __libc_android_log_vprint(int prio, const char *tag, const char *fmt,
                               va_list ap)
 {
@@ -162,6 +179,7 @@ int __libc_android_log_vprint(int prio, const char *tag, const char *fmt,
     return __libc_android_log_write(prio, tag, buf);
 }
 
+__LIBC_HIDDEN__
 int __libc_android_log_print(int prio, const char *tag, const char *fmt, ...)
 {
     va_list ap;
@@ -174,11 +192,12 @@ int __libc_android_log_print(int prio, const char *tag, const char *fmt, ...)
     return __libc_android_log_write(prio, tag, buf);
 }
 
+__LIBC_HIDDEN__
 int __libc_android_log_assert(const char *cond, const char *tag,
 			      const char *fmt, ...)
 {
     va_list ap;
-    char buf[LOG_BUF_SIZE];    
+    char buf[LOG_BUF_SIZE];
 
     va_start(ap, fmt);
     vsnprintf(buf, LOG_BUF_SIZE, fmt, ap);
@@ -189,4 +208,42 @@ int __libc_android_log_assert(const char *cond, const char *tag,
     exit(1);
 
     return -1;
+}
+
+/*
+ * Event logging.
+ */
+
+// must be kept in sync with frameworks/base/core/java/android/util/EventLog.java
+typedef enum {
+    EVENT_TYPE_INT      = 0,
+    EVENT_TYPE_LONG     = 1,
+    EVENT_TYPE_STRING   = 2,
+    EVENT_TYPE_LIST     = 3,
+} AndroidEventLogType;
+
+static int __libc_android_log_btwrite(int32_t tag, char type, const void *payload, size_t len)
+{
+    struct iovec vec[3];
+
+    vec[0].iov_base = &tag;
+    vec[0].iov_len = sizeof(tag);
+    vec[1].iov_base = &type;
+    vec[1].iov_len = sizeof(type);
+    vec[2].iov_base = (void*)payload;
+    vec[2].iov_len = len;
+
+    return log_channels[LOG_ID_EVENTS].logger(LOG_ID_EVENTS, vec);
+}
+
+__LIBC_HIDDEN__
+void __libc_android_log_event_int(int32_t tag, int value)
+{
+    __libc_android_log_btwrite(tag, EVENT_TYPE_INT, &value, sizeof(value));
+}
+
+__LIBC_HIDDEN__
+void __libc_android_log_event_uid(int32_t tag)
+{
+    __libc_android_log_event_int(tag, getuid());
 }
