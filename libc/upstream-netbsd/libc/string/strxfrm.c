@@ -1,11 +1,11 @@
-/*	$OpenBSD: regfree.c,v 1.7 2005/08/05 13:03:00 espie Exp $ */
+/*	$NetBSD: strxfrm.c,v 1.12 2012/06/25 22:32:46 abs Exp $	*/
+
 /*-
- * Copyright (c) 1992, 1993, 1994 Henry Spencer.
- * Copyright (c) 1992, 1993, 1994
+ * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Henry Spencer.
+ * Chris Torek.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,42 +30,41 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)regfree.c	8.3 (Berkeley) 3/20/94
  */
 
-#include <sys/types.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <regex.h>
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char sccsid[] = "@(#)strxfrm.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: strxfrm.c,v 1.12 2012/06/25 22:32:46 abs Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
 
-#include "utils.h"
-#include "regex2.h"
+#include <assert.h>
+#include <string.h>
 
 /*
- - regfree - free everything
+ * Transform src, storing the result in dst, such that
+ * strcmp() on transformed strings returns what strcoll()
+ * on the original untransformed strings would return.
  */
-void
-regfree(regex_t *preg)
+size_t
+strxfrm(char *dst, const char *src, size_t n)
 {
-	struct re_guts *g;
+	size_t srclen, copysize;
 
-	if (preg->re_magic != MAGIC1)	/* oops */
-		return;			/* nice to complain, but hard */
+	_DIAGASSERT(src != NULL);
 
-	g = preg->re_g;
-	if (g == NULL || g->magic != MAGIC2)	/* oops again */
-		return;
-	preg->re_magic = 0;		/* mark it invalid */
-	g->magic = 0;			/* mark it invalid */
-
-	if (g->strip != NULL)
-		free((char *)g->strip);
-	if (g->sets != NULL)
-		free((char *)g->sets);
-	if (g->setbits != NULL)
-		free((char *)g->setbits);
-	if (g->must != NULL)
-		free(g->must);
-	free((char *)g);
+	/*
+	 * Since locales are unimplemented, this is just a copy.
+	 */
+	srclen = strlen(src);
+	if (n != 0) {
+		_DIAGASSERT(dst != NULL);
+		copysize = srclen < n ? srclen : n - 1;
+		(void)memcpy(dst, src, copysize);
+		dst[copysize] = 0;
+	}
+	return (srclen);
 }
