@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (c) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,43 +26,35 @@
  * SUCH DAMAGE.
  */
 
-typedef struct
+#include <sys/types.h>
+#include <private/logd.h>
+#include <stdio.h>
+
+/*
+ * This source file should only be included by libc.so, its purpose is
+ * to support legacy ARM binaries by exporting a publicly visible
+ * implementation of atexit().
+ */
+
+extern int __cxa_atexit(void (*func)(void *), void *arg, void *dso);
+
+/*
+ * Register a function to be performed at exit.
+ */
+int
+atexit(void (*func)(void))
 {
-    void (**preinit_array)(void);
-    void (**init_array)(void);
-    void (**fini_array)(void);
-} structors_array_t;
+    /*
+     * Exit functions queued by this version of atexit will not be called
+     * on dlclose(), and when they are called (at program exit), the
+     * calling library may have been dlclose()'d, causing the program to
+     * crash.
+     */
+    static char const warning[] =
+        "WARNING: generic atexit() called from legacy shared library\n";
 
-extern int main(int argc, char **argv, char **env);
+    __libc_android_log_print(ANDROID_LOG_WARN, "libc", warning);
+    fprintf(stderr, warning);
 
-extern void __libc_init(
-  unsigned int *elfdata,
-  void (*onexit)(void),
-  int (*slingshot)(int, char**, char**),
-  structors_array_t const * const structors
-);
-
-__attribute__ ((section (".preinit_array")))
-void (*__PREINIT_ARRAY__)(void) = (void (*)(void)) -1;
-
-__attribute__ ((section (".init_array")))
-void (*__INIT_ARRAY__)(void) = (void (*)(void)) -1;
-
-__attribute__ ((section (".fini_array")))
-void (*__FINI_ARRAY__)(void) = (void (*)(void)) -1;
-
-__attribute__((visibility("hidden")))
-void _start() {
-  structors_array_t array;
-  void *elfdata;
-
-  array.preinit_array = &__PREINIT_ARRAY__;
-  array.init_array =    &__INIT_ARRAY__;
-  array.fini_array =    &__FINI_ARRAY__;
-
-  elfdata = __builtin_frame_address(0) + sizeof(void *);
-  __libc_init(elfdata, (void *) 0, &main, &array);
+    return (__cxa_atexit((void (*)(void *))func, NULL, NULL));
 }
-
-#include "__dso_handle.h"
-#include "atexit.h"
