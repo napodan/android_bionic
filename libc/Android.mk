@@ -9,7 +9,6 @@ libc_common_src_files := \
 	unistd/abort.c \
 	unistd/alarm.c \
 	unistd/brk.c \
-	unistd/creat.c \
 	unistd/daemon.c \
 	unistd/eventfd.c \
 	unistd/exec.c \
@@ -31,7 +30,6 @@ libc_common_src_files := \
 	unistd/killpg.c \
 	unistd/lseek64.c \
 	unistd/mmap.c \
-	unistd/nice.c \
 	unistd/open.c \
 	unistd/openat.c \
 	unistd/opendir.c \
@@ -64,7 +62,6 @@ libc_common_src_files := \
 	unistd/sigwait.c \
 	unistd/sleep.c \
 	unistd/statfs.c \
-	unistd/strsignal.c \
 	unistd/syslog.c \
 	unistd/system.c \
 	unistd/tcgetpgrp.c \
@@ -194,8 +191,6 @@ libc_common_src_files := \
 	string/strcoll.c \
 	string/strcspn.c \
 	string/strdup.c \
-	string/strerror.c \
-	string/strerror_r.c \
 	string/strlcat.c \
 	string/strlcpy.c \
 	string/strncat.c \
@@ -209,7 +204,6 @@ libc_common_src_files := \
 	string/strstr.c \
 	string/strtok.c \
 	string/strtotimeval.c \
-	string/strxfrm.c \
 	wchar/wcpcpy.c \
 	wchar/wcpncpy.c \
 	wchar/wcscasecmp.c \
@@ -283,6 +277,9 @@ libc_common_src_files := \
 	bionic/sched_cpucount.c \
 	bionic/semaphore.c \
 	bionic/sha1.c \
+	bionic/strerror.cpp \
+	bionic/strerror_r.cpp \
+	bionic/strsignal.cpp \
 	bionic/ssp.c \
 	bionic/stubs.c \
 	bionic/system_properties.c \
@@ -320,10 +317,21 @@ libc_common_src_files := \
 	netbsd/nameser/ns_netint.c \
 	netbsd/nameser/ns_print.c \
 	netbsd/nameser/ns_samedomain.c \
-	regex/regcomp.c \
-	regex/regerror.c \
-	regex/regexec.c \
-	regex/regfree.c \
+
+libc_upstream_netbsd_src_files := \
+	upstream-netbsd/libc/compat-43/creat.c \
+	upstream-netbsd/libc/gen/ftw.c \
+	upstream-netbsd/libc/gen/nftw.c \
+	upstream-netbsd/libc/gen/nice.c \
+	upstream-netbsd/libc/gen/psignal.c \
+	upstream-netbsd/libc/regex/regcomp.c \
+	upstream-netbsd/libc/regex/regerror.c \
+	upstream-netbsd/libc/regex/regexec.c \
+	upstream-netbsd/libc/regex/regfree.c \
+	upstream-netbsd/libc/stdlib/tdelete.c \
+	upstream-netbsd/libc/stdlib/tfind.c \
+	upstream-netbsd/libc/stdlib/tsearch.c \
+	upstream-netbsd/libc/string/strxfrm.c \
 
 # The following files are common, but must be compiled
 # with different C flags when building a static C library.
@@ -627,8 +635,31 @@ ALL_GENERATED_SOURCES += $(GEN)
 WITH_MALLOC_CHECK_LIBC_A := $(strip $(WITH_MALLOC_CHECK_LIBC_A))
 
 # ========================================================
+# libc_netbsd.a - upstream NetBSD C library code
+# ========================================================
+#
+# These files are built with the netbsd-compat.h header file
+# automatically included.
+
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES := $(libc_upstream_netbsd_src_files)
+LOCAL_CFLAGS := \
+    $(libc_common_cflags) \
+    -I$(LOCAL_PATH)/upstream-netbsd \
+    -include upstream-netbsd/netbsd-compat.h
+LOCAL_C_INCLUDES := $(libc_common_c_includes)
+LOCAL_MODULE := libc_netbsd
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_SYSTEM_SHARED_LIBRARIES :=
+
+include $(BUILD_STATIC_LIBRARY)
+
+
+# ========================================================
 # libc_common.a
 # ========================================================
+
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(libc_common_src_files)
@@ -638,6 +669,8 @@ LOCAL_CFLAGS += -DCRT_LEGACY_WORKAROUND
 endif
 LOCAL_C_INCLUDES := $(libc_common_c_includes)
 LOCAL_MODULE := libc_common
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_WHOLE_STATIC_LIBRARIES := libc_netbsd
 LOCAL_SYSTEM_SHARED_LIBRARIES :=
 
 include $(BUILD_STATIC_LIBRARY)
@@ -665,6 +698,7 @@ LOCAL_CFLAGS := $(libc_common_cflags) \
                 -DLIBC_STATIC
 
 LOCAL_MODULE := libc_nomalloc
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 LOCAL_WHOLE_STATIC_LIBRARIES := libc_common
 LOCAL_SYSTEM_SHARED_LIBRARIES :=
 
