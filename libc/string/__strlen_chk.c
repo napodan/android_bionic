@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,22 +25,43 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#undef _FORTIFY_SOURCE
-#include <string.h>
-#include <strings.h>
 
-void *memmove(void *dst, const void *src, size_t n)
+#include <string.h>
+#include <stdlib.h>
+#include <private/logd.h>
+
+/*
+ * Runtime implementation of __strlen_chk.
+ *
+ * See
+ *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+ *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
+ * for details.
+ *
+ * This strlen check is called if _FORTIFY_SOURCE is defined and
+ * greater than 0.
+ *
+ * This test is designed to detect code such as:
+ *
+ * int main() {
+ *   char buf[10];
+ *   memcpy(buf, "1234567890", sizeof(buf));
+ *   size_t len = strlen(buf); // segfault here with _FORTIFY_SOURCE
+ *   printf("%d\n", len);
+ *   return 0;
+ * }
+ *
+ * or anytime strlen reads beyond an object boundary.
+ */
+size_t __strlen_chk(const char *s, size_t s_len)
 {
-  const char *p = src;
-  char *q = dst;
-  /* We can use the optimized memcpy if the source and destination
-   * don't overlap.
-   */
-  if (__builtin_expect(((q < p) && ((size_t)(p - q) >= n))
-                    || ((p < q) && ((size_t)(q - p) >= n)), 1)) {
-    return memcpy(dst, src, n);
-  } else {
-    bcopy(src, dst, n);
-    return dst;
-  }
+    size_t ret = strlen(s);
+
+    if (__builtin_expect(ret >= s_len, 0)) {
+        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
+            "*** strlen read overflow detected ***\n");
+        abort();
+    }
+
+    return ret;
 }

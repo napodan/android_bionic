@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,22 +25,32 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
 #undef _FORTIFY_SOURCE
 #include <string.h>
-#include <strings.h>
+#include <stdlib.h>
+#include <private/logd.h>
 
-void *memmove(void *dst, const void *src, size_t n)
+/*
+ * Runtime implementation of __memcpy_chk.
+ *
+ * See
+ *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+ *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
+ * for details.
+ *
+ * This memcpy check is called if _FORTIFY_SOURCE is defined and
+ * greater than 0.
+ */
+void *__memcpy_chk(void *dest, const void *src,
+              size_t copy_amount, size_t dest_len)
 {
-  const char *p = src;
-  char *q = dst;
-  /* We can use the optimized memcpy if the source and destination
-   * don't overlap.
-   */
-  if (__builtin_expect(((q < p) && ((size_t)(p - q) >= n))
-                    || ((p < q) && ((size_t)(q - p) >= n)), 1)) {
-    return memcpy(dst, src, n);
-  } else {
-    bcopy(src, dst, n);
-    return dst;
-  }
+    if (__builtin_expect(copy_amount > dest_len, 0)) {
+        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
+            "*** memcpy buffer overflow detected ***\n");
+        __libc_android_log_event_uid(BIONIC_EVENT_MEMCPY_BUFFER_OVERFLOW);
+        abort();
+    }
+
+    return memcpy(dest, src, copy_amount);
 }
