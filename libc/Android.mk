@@ -289,7 +289,6 @@ libc_common_src_files := \
 	bionic/strerror.cpp \
 	bionic/strerror_r.cpp \
 	bionic/strsignal.cpp \
-	bionic/ssp.c \
 	bionic/stubs.c \
 	bionic/system_properties.c \
 	bionic/tdelete.c \
@@ -449,9 +448,8 @@ libc_common_src_files += \
 libc_static_common_src_files += \
         bionic/pthread.c \
 
-# this is needed for static versions of libc
 libc_arch_static_src_files := \
-	arch-x86/bionic/dl_iterate_phdr_static.c
+	bionic/dl_iterate_phdr_static.c
 
 libc_arch_dynamic_src_files :=
 endif # x86
@@ -539,6 +537,7 @@ ifneq ($(BOARD_MALLOC_ALIGNMENT),)
 endif
 
 ifeq ($(TARGET_ARCH),arm)
+  libc_common_cflags += -DSOFTFLOAT
   libc_common_cflags += -fstrict-aliasing
   libc_crt_target_cflags := -mthumb-interwork
   #
@@ -616,15 +615,13 @@ libc_crt_target_cflags += -I$(LOCAL_PATH)/private -I$(LOCAL_PATH)/arch-$(TARGET_
 # which are needed to build all other objects (shared/static libs and
 # executables)
 # ==========================================================================
-
-ifneq ($(filter arm x86,$(TARGET_ARCH)),)
-# ARM and x86 need crtbegin_so/crtend_so.
+# ARM, MIPS, and x86 all need crtbegin_so/crtend_so.
 #
 # For x86, the .init section must point to a function that calls all
 # entries in the .ctors section. (on ARM this is done through the
 # .init_array section instead).
 #
-# For both platforms, the .fini_array section must point to a function
+# For all the platforms, the .fini_array section must point to a function
 # that will call __cxa_finalize(&__dso_handle) in order to ensure that
 # static C++ destructors are properly called on dlclose().
 #
@@ -647,7 +644,6 @@ $(GEN): $(LOCAL_PATH)/arch-$(TARGET_ARCH)/bionic/crtend_so.S
 	@mkdir -p $(dir $@)
 	$(TARGET_CC) $(libc_crt_target_so_cflags) -o $@ -c $<
 ALL_GENERATED_SOURCES += $(GEN)
-endif # TARGET_ARCH == x86 || TARGET_ARCH == arm
 
 
 GEN := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_static.o
@@ -675,6 +671,26 @@ ALL_GENERATED_SOURCES += $(GEN)
 # To enable malloc leak check for statically linked programs, add
 # "WITH_MALLOC_CHECK_LIBC_A := true" to buildspec.mk
 WITH_MALLOC_CHECK_LIBC_A := $(strip $(WITH_MALLOC_CHECK_LIBC_A))
+
+# ========================================================
+# libbionic_ssp.a - stack protector code
+# ========================================================
+#
+# The stack protector code needs to be compiled
+# with -fno-stack-protector, since it modifies the
+# stack canary.
+
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES := bionic/ssp.c
+LOCAL_CFLAGS := $(libc_common_cflags) -fno-stack-protector
+LOCAL_C_INCLUDES := $(libc_common_c_includes)
+LOCAL_MODULE := libbionic_ssp
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_SYSTEM_SHARED_LIBRARIES :=
+
+include $(BUILD_STATIC_LIBRARY)
+
 
 # ========================================================
 # libc_netbsd.a - upstream NetBSD C library code
@@ -706,13 +722,10 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(libc_common_src_files)
 LOCAL_CFLAGS := $(libc_common_cflags)
-ifeq ($(TARGET_ARCH),arm)
-LOCAL_CFLAGS += -DCRT_LEGACY_WORKAROUND
-endif
 LOCAL_C_INCLUDES := $(libc_common_c_includes)
 LOCAL_MODULE := libc_common
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
-LOCAL_WHOLE_STATIC_LIBRARIES := libc_netbsd
+LOCAL_WHOLE_STATIC_LIBRARIES := libbionic_ssp libc_netbsd
 LOCAL_SYSTEM_SHARED_LIBRARIES :=
 
 include $(BUILD_STATIC_LIBRARY)
@@ -764,6 +777,7 @@ LOCAL_CFLAGS := $(libc_common_cflags) \
                 -DLIBC_STATIC
 LOCAL_C_INCLUDES := $(libc_common_c_includes)
 LOCAL_MODULE := libc
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 LOCAL_WHOLE_STATIC_LIBRARIES := libc_common
 LOCAL_SYSTEM_SHARED_LIBRARIES :=
 
@@ -804,6 +818,7 @@ ifeq ($(TARGET_ARCH),arm)
 endif
 
 LOCAL_MODULE:= libc
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 # WARNING: The only library libc.so should depend on is libdl.so!  If you add other libraries,
 # make sure to add -Wl,--exclude-libs=libgcc.a to the LOCAL_LDFLAGS for those libraries.  This
@@ -846,8 +861,9 @@ LOCAL_SRC_FILES := \
 	bionic/malloc_debug_stacktrace.c
 
 LOCAL_MODULE:= libc_malloc_debug_leak
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
-LOCAL_SHARED_LIBRARIES := libc
+LOCAL_SHARED_LIBRARIES := libc libdl
 LOCAL_WHOLE_STATIC_LIBRARIES := libc_common
 LOCAL_SYSTEM_SHARED_LIBRARIES :=
 LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
@@ -873,6 +889,7 @@ LOCAL_SRC_FILES := \
 	bionic/malloc_debug_qemu.c
 
 LOCAL_MODULE:= libc_malloc_debug_qemu
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_SHARED_LIBRARIES := libc libdl
 LOCAL_WHOLE_STATIC_LIBRARIES := libc_common
