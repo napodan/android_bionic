@@ -1,12 +1,8 @@
-/*	$OpenBSD: utils.h,v 1.4 2003/06/02 20:18:36 millert Exp $	*/
+/*	$NetBSD: nice.c,v 1.13 2011/05/01 02:49:54 christos Exp $	*/
 
-/*-
- * Copyright (c) 1992, 1993, 1994 Henry Spencer.
- * Copyright (c) 1992, 1993, 1994
+/*
+ * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Henry Spencer.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,25 +27,44 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)utils.h	8.3 (Berkeley) 3/20/94
  */
 
-/* utility definitions */
-#define	DUPMAX		255
-#define	INFINITY	(DUPMAX + 1)
-#define	NC		(CHAR_MAX - CHAR_MIN + 1)
-typedef unsigned char uch;
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char sccsid[] = "@(#)nice.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: nice.c,v 1.13 2011/05/01 02:49:54 christos Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
 
-/* switch off assertions (if not already off) if no REDEBUG */
-#ifndef REDEBUG
-#ifndef NDEBUG
-#define	NDEBUG	/* no assertions please */
-#endif
-#endif
-#include <assert.h>
+#include "namespace.h"
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <errno.h>
+#include <unistd.h>
 
-/* for old systems with bcopy() but no memmove() */
-#ifdef USEBCOPY
-#define	memmove(d, s, c)	bcopy(s, d, c)
+#ifdef __weak_alias
+__weak_alias(nice,_nice)
 #endif
+
+/*
+ * Backwards compatible nice.
+ */
+int
+nice(int incr)
+{
+	int prio;
+
+	errno = 0;
+	prio = getpriority(PRIO_PROCESS, 0);
+	if (prio == -1 && errno)
+		return -1;
+	if (setpriority(PRIO_PROCESS, 0, prio + incr) == -1) {
+		if (errno == EACCES)
+			errno = EPERM;
+		return -1;
+	}
+	return getpriority(PRIO_PROCESS, 0);
+}
