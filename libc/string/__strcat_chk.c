@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,22 +25,44 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#undef _FORTIFY_SOURCE
-#include <string.h>
-#include <strings.h>
 
-void *memmove(void *dst, const void *src, size_t n)
+#include <string.h>
+#include <stdlib.h>
+#include <private/logd.h>
+#include <safe_iop.h>
+
+/*
+ * Runtime implementation of __builtin____strcat_chk.
+ *
+ * See
+ *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+ *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
+ * for details.
+ *
+ * This strcat check is called if _FORTIFY_SOURCE is defined and
+ * greater than 0.
+ */
+char *__strcat_chk (char *dest, const char *src, size_t dest_buf_size)
 {
-  const char *p = src;
-  char *q = dst;
-  /* We can use the optimized memcpy if the source and destination
-   * don't overlap.
-   */
-  if (__builtin_expect(((q < p) && ((size_t)(p - q) >= n))
-                    || ((p < q) && ((size_t)(q - p) >= n)), 1)) {
-    return memcpy(dst, src, n);
-  } else {
-    bcopy(src, dst, n);
-    return dst;
-  }
+    // TODO: optimize so we don't scan src/dest twice.
+    size_t src_len  = strlen(src);
+    size_t dest_len = strlen(dest);
+    size_t sum;
+
+    // sum = src_len + dest_len + 1 (with overflow protection)
+    if (!safe_add3(&sum, src_len, dest_len, 1U)) {
+        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
+            "*** strcat integer overflow detected ***\n");
+        __libc_android_log_event_uid(BIONIC_EVENT_STRCAT_INTEGER_OVERFLOW);
+        abort();
+    }
+
+    if (sum > dest_buf_size) {
+        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
+            "*** strcat buffer overflow detected ***\n");
+        __libc_android_log_event_uid(BIONIC_EVENT_STRNCAT_BUFFER_OVERFLOW);
+        abort();
+    }
+
+    return strcat(dest, src);
 }
