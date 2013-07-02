@@ -589,8 +589,8 @@ ifneq ($(filter arm x86,$(TARGET_ARCH)),)
 
 libc_crt_target_so_cflags := $(libc_crt_target_cflags)
 ifeq ($(TARGET_ARCH),x86)
-    # This flag must be added for x86 targets, but not for ARM
-    libc_crt_target_so_cflags += -fPIC
+    libc_crtbegin_extension := S
+    libc_crt_target_so_cflags := -fPIC
 endif
 GEN := $(TARGET_OUT_STATIC_LIBRARIES)/crtbegin_so.o
 $(GEN): $(LOCAL_PATH)/arch-$(TARGET_ARCH)/bionic/crtbegin_so.S
@@ -683,6 +683,7 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := \
+		arch-arm/bionic/crtbegin_so.c \
 	$(libc_arch_static_src_files) \
 	$(libc_static_common_src_files) \
 	bionic/dlmalloc.c \
@@ -720,6 +721,17 @@ LOCAL_SRC_FILES := \
 	bionic/malloc_debug_common.c \
 	bionic/pthread_debug.c \
 	bionic/libc_init_dynamic.c
+
+ifeq ($(TARGET_ARCH),arm)
+	LOCAL_NO_CRT := true
+	LOCAL_CFLAGS += -DCRT_LEGACY_WORKAROUND
+
+	LOCAL_SRC_FILES := \
+		arch-arm/bionic/crtbegin_so.c \
+		arch-arm/bionic/atexit_legacy.c \
+		$(LOCAL_SRC_FILES) \
+		arch-arm/bionic/crtend_so.S
+endif
 
 LOCAL_MODULE:= libc
 
