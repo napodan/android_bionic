@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,11 +25,18 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <sys/resource.h>
 
-int nice(int increment)
-{
-    int  priority = getpriority(PRIO_PROCESS, 0);
+#include <machine/asm.h>
 
-    return setpriority( PRIO_PROCESS, 0, priority+increment);
-}
+/*
+ * Coding the abort function in assembly so that registers are guaranteed to
+ * be preserved properly regardless of GCC's assumption on the "noreturn"
+ * attribute. When the registers are not properly preserved we won't be able
+ * to unwind the stack all the way to the bottom to fully reveal the call
+ * sequence when the crash happens.
+ */
+ENTRY(abort)
+    .save   {r3, r14}
+    stmfd   sp!, {r3, r14}
+    blx     PIC_SYM(_C_LABEL(__libc_android_abort), PLT)
+END(abort)
