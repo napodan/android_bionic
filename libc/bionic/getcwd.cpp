@@ -25,26 +25,52 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <signal.h>
 
-/* this function is called from the ARM assembly setjmp fragments */
-int
-sigblock(int mask)
-{
-    int  n;
-    union {
-        int       the_mask;
-        sigset_t  the_sigset;
-    } in, out;
+#include <unistd.h>
+#include <errno.h>
 
-    sigemptyset(&in.the_sigset);
-    in.the_mask = mask;
+extern "C" int __getcwd(char* buf, size_t size);
 
-    n = sigprocmask(SIG_BLOCK, &in.the_sigset, &out.the_sigset);
-    if (n)
-        return n;
+char* getcwd(char* buf, size_t size) {
+  // You can't specify size 0 unless you're asking us to allocate for you.
+  if (buf != NULL && size == 0) {
+    errno = EINVAL;
+    return NULL;
+  }
 
-    return out.the_mask;
+  // Allocate a buffer if necessary.
+  char* allocated_buf = NULL;
+  if (buf == NULL) {
+    size_t allocated_size = size;
+    if (size == 0) {
+      // The Linux kernel won't return more than a page, so translate size 0 to 4KiB.
+      // TODO: if we need to support paths longer than that, we'll have to walk the tree ourselves.
+      size = getpagesize();
+    }
+    buf = allocated_buf = static_cast<char*>(malloc(allocated_size));
+    if (buf == NULL) {
+      // malloc set errno.
+      return NULL;
+    }
+  }
+
+  // Ask the kernel to fill our buffer.
+  int rc = __getcwd(buf, size);
+  if (rc == -1) {
+    free(allocated_buf);
+    // __getcwd set errno.
+    return NULL;
+  }
+
+  // If we allocated a whole page, only return as large an allocation as necessary.
+  if (allocated_buf != NULL) {
+    if (size == 0) {
+      buf = strdup(allocated_buf);
+      free(allocated_buf);
+    } else {
+      buf = allocated_buf;
+    }
+  }
+
+  return buf;
 }
-
-
