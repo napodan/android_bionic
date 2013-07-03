@@ -17,7 +17,6 @@ libc_common_src_files := \
 	unistd/fstatfs.c \
 	unistd/ftime.c \
 	unistd/ftok.c \
-	unistd/getcwd.c \
 	unistd/getdtablesize.c \
 	unistd/gethostname.c \
 	unistd/getopt_long.c \
@@ -271,6 +270,7 @@ libc_common_src_files := \
 	bionic/fdprintf.c \
 	bionic/fork.c \
 	bionic/fts.c \
+	bionic/getcwd.cpp \
 	bionic/if_nametoindex.c \
 	bionic/if_indextoname.c \
 	bionic/ioctl.c \
@@ -368,6 +368,7 @@ libc_common_src_files += \
 	arch-arm/bionic/__get_sp.S \
 	arch-arm/bionic/_exit_with_stack_teardown.S \
 	arch-arm/bionic/_setjmp.S \
+	arch-arm/bionic/abort_arm.S \
 	arch-arm/bionic/atomics_arm.S \
 	arch-arm/bionic/clone.S \
 	arch-arm/bionic/eabi.c \
