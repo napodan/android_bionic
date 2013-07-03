@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2008 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,28 +26,51 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/eventfd.h>
 #include <unistd.h>
+#include <errno.h>
 
-/* We duplicate the GLibc error semantics, which are poorly defined
- * if the read() or write() does not return the proper number of bytes.
- */
-int eventfd_read(int fd, eventfd_t *counter)
-{
-    int ret = read(fd, counter, sizeof(*counter));
+extern "C" int __getcwd(char* buf, size_t size);
 
-    if (ret == sizeof(*counter))
-        return 0;
+char* getcwd(char* buf, size_t size) {
+  // You can't specify size 0 unless you're asking us to allocate for you.
+  if (buf != NULL && size == 0) {
+    errno = EINVAL;
+    return NULL;
+  }
 
-    return -1;
-}
+  // Allocate a buffer if necessary.
+  char* allocated_buf = NULL;
+  if (buf == NULL) {
+    size_t allocated_size = size;
+    if (size == 0) {
+      // The Linux kernel won't return more than a page, so translate size 0 to 4KiB.
+      // TODO: if we need to support paths longer than that, we'll have to walk the tree ourselves.
+      size = getpagesize();
+    }
+    buf = allocated_buf = static_cast<char*>(malloc(allocated_size));
+    if (buf == NULL) {
+      // malloc set errno.
+      return NULL;
+    }
+  }
 
-int eventfd_write(int fd, eventfd_t counter)
-{
-    int ret = write(fd, &counter, sizeof(counter));
+  // Ask the kernel to fill our buffer.
+  int rc = __getcwd(buf, size);
+  if (rc == -1) {
+    free(allocated_buf);
+    // __getcwd set errno.
+    return NULL;
+  }
 
-    if (ret == sizeof(counter))
-        return 0;
+  // If we allocated a whole page, only return as large an allocation as necessary.
+  if (allocated_buf != NULL) {
+    if (size == 0) {
+      buf = strdup(allocated_buf);
+      free(allocated_buf);
+    } else {
+      buf = allocated_buf;
+    }
+  }
 
-    return -1;
+  return buf;
 }
