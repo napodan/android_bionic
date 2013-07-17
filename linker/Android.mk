@@ -22,25 +22,29 @@ LOCAL_CFLAGS += -fno-stack-protector \
 #
 LOCAL_CFLAGS += -DLINKER_DEBUG=0
 
-# we need to access the Bionic private header <bionic_tls.h>
-# in the linker; duplicate the HAVE_ARM_TLS_REGISTER definition
-# from the libc build
+# We need to access Bionic private headers in the linker...
+LOCAL_CFLAGS += -I$(LOCAL_PATH)/../libc/
+
+# ...one of which is <private/bionic_tls.h>, for which we
+# need HAVE_ARM_TLS_REGISTER.
 ifeq ($(TARGET_ARCH)-$(ARCH_ARM_HAVE_TLS_REGISTER),arm-true)
     LOCAL_CFLAGS += -DHAVE_ARM_TLS_REGISTER
 endif
-LOCAL_CFLAGS += \
-    -I$(LOCAL_PATH)/../libc/private \
-    -I$(LOCAL_PATH)/../libc/arch-$(TARGET_ARCH)/bionic
 
 ifeq ($(TARGET_ARCH),arm)
-LOCAL_CFLAGS += -DANDROID_ARM_LINKER
-else
-  ifeq ($(TARGET_ARCH),x86)
+    LOCAL_CFLAGS += -DANDROID_ARM_LINKER
+endif
+
+ifeq ($(TARGET_ARCH),x86)
     LOCAL_CFLAGS += -DANDROID_X86_LINKER
-  endif
+endif
+
+ifeq ($(TARGET_ARCH),mips)
+    LOCAL_CFLAGS += -DANDROID_MIPS_LINKER
 endif
 
 LOCAL_MODULE:= linker
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_STATIC_LIBRARIES := libc_nomalloc
 
@@ -63,6 +67,14 @@ LOCAL_NO_CRT := true
 
 include $(BUILD_SYSTEM)/dynamic_binary.mk
 
+# See build/core/executable.mk
+$(linked_module): PRIVATE_TARGET_GLOBAL_LD_DIRS := $(TARGET_GLOBAL_LD_DIRS)
+$(linked_module): PRIVATE_TARGET_GLOBAL_LDFLAGS := $(TARGET_GLOBAL_LDFLAGS)
+$(linked_module): PRIVATE_TARGET_FDO_LIB := $(TARGET_FDO_LIB)
+$(linked_module): PRIVATE_TARGET_LIBGCC := $(TARGET_LIBGCC)
+$(linked_module): PRIVATE_TARGET_CRTBEGIN_DYNAMIC_O := $(TARGET_CRTBEGIN_DYNAMIC_O)
+$(linked_module): PRIVATE_TARGET_CRTBEGIN_STATIC_O := $(TARGET_CRTBEGIN_STATIC_O)
+$(linked_module): PRIVATE_TARGET_CRTEND_O := $(TARGET_CRTEND_O)
 $(linked_module): $(TARGET_CRTBEGIN_STATIC_O) $(all_objects) $(all_libraries) $(TARGET_CRTEND_O)
 	$(transform-o-to-static-executable)
 	@echo "target PrefixSymbols: $(PRIVATE_MODULE) ($@)"
