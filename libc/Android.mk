@@ -500,18 +500,17 @@ endif # mips
 # Define some common cflags
 # ========================================================
 libc_common_cflags := \
-		-DWITH_ERRLIST			\
-		-DANDROID_CHANGES		\
-		-DUSE_LOCKS 			\
+    -DWITH_ERRLIST \
+    -DANDROID_CHANGES \
+    -D_LIBC=1 \
+    -DFLOATING_POINT \
+    -DINET6 \
+    -I$(LOCAL_PATH)/private \
+    -DPOSIX_MISTAKE \
+    -DUSE_LOCKS \
 		-DREALLOC_ZERO_BYTES_FREES 	\
-		-D_LIBC=1 			\
 		-DSOFTFLOAT                     \
-		-DFLOATING_POINT		\
-		-DINET6 \
-		-I$(LOCAL_PATH)/private \
-		-DUSE_DL_PREFIX \
-		-DPOSIX_MISTAKE \
-                -DLOG_ON_HEAP_ERROR \
+		-DUSE_DL_PREFIX 
 
 # these macro definitions are required to implement the
 # 'timezone' and 'daylight' global variables, as well as
@@ -585,14 +584,10 @@ else
     libc_common_cflags += -DANDROID_SMP=0
 endif
 
-# Needed to access private/__dso_handle.S from
-# crtbegin_xxx.S and crtend_xxx.S
-#
-libc_crt_target_cflags += -I$(LOCAL_PATH)/private
-
-ifeq ($(TARGET_ARCH),arm)
-libc_crt_target_cflags += -DCRT_LEGACY_WORKAROUND
-endif
+# crtbrand.c needs <stdint.h> and a #define for the platform SDK version.
+libc_crt_target_cflags += \
+    -I$(LOCAL_PATH)/include  \
+    -DPLATFORM_SDK_VERSION=$(PLATFORM_SDK_VERSION)
 
 # Define some common includes
 # ========================================================
@@ -602,10 +597,11 @@ libc_common_c_includes := \
 		$(LOCAL_PATH)/stdio   \
 		external/safe-iop/include
 
-# Needed to access private/__dso_handle.S from
+# Needed to access private/__dso_handle.h from
 # crtbegin_xxx.S and crtend_xxx.S
-#
-libc_crt_target_cflags += -I$(LOCAL_PATH)/private
+libc_crt_target_cflags += \
+    -I$(LOCAL_PATH)/private \
+    -I$(LOCAL_PATH)/arch-$(TARGET_ARCH)/include
 
 # Define the libc run-time (crt) support object files that must be built,
 # which are needed to build all other objects (shared/static libs and
@@ -621,32 +617,40 @@ libc_crt_target_cflags += -I$(LOCAL_PATH)/private
 # that will call __cxa_finalize(&__dso_handle) in order to ensure that
 # static C++ destructors are properly called on dlclose().
 #
-
+ifeq ($(TARGET_ARCH),arm)
+    libc_crtbegin_extension := c
+    libc_crt_target_so_cflags :=
+    libc_crt_target_cflags += -DCRT_LEGACY_WORKAROUND
+endif
+ifeq ($(TARGET_ARCH),mips)
+    libc_crtbegin_extension := S
+    libc_crt_target_so_cflags := -fPIC
+endif
 libc_crt_target_so_cflags := $(libc_crt_target_cflags)
 ifeq ($(TARGET_ARCH),x86)
     libc_crtbegin_extension := S
     libc_crt_target_so_cflags := -fPIC
 endif
-GEN := $(TARGET_OUT_STATIC_LIBRARIES)/crtbegin_so.o
+GEN := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_so.o
 $(GEN): $(LOCAL_PATH)/arch-$(TARGET_ARCH)/bionic/crtbegin_so.S
 	@mkdir -p $(dir $@)
 	$(TARGET_CC) $(libc_crt_target_so_cflags) -o $@ -c $<
 ALL_GENERATED_SOURCES += $(GEN)
 
-GEN := $(TARGET_OUT_STATIC_LIBRARIES)/crtend_so.o
+GEN := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtend_so.o
 $(GEN): $(LOCAL_PATH)/arch-$(TARGET_ARCH)/bionic/crtend_so.S
 	@mkdir -p $(dir $@)
 	$(TARGET_CC) $(libc_crt_target_so_cflags) -o $@ -c $<
 ALL_GENERATED_SOURCES += $(GEN)
 
 
-GEN := $(TARGET_OUT_STATIC_LIBRARIES)/crtbegin_static.o
+GEN := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_static.o
 $(GEN): $(LOCAL_PATH)/arch-$(TARGET_ARCH)/bionic/crtbegin_static.S
 	@mkdir -p $(dir $@)
 	$(TARGET_CC) $(libc_crt_target_cflags) -o $@ -c $<
 ALL_GENERATED_SOURCES += $(GEN)
 
-GEN := $(TARGET_OUT_STATIC_LIBRARIES)/crtbegin_dynamic.o
+GEN := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_dynamic.o
 $(GEN): $(LOCAL_PATH)/arch-$(TARGET_ARCH)/bionic/crtbegin_dynamic.S
 	@mkdir -p $(dir $@)
 	$(TARGET_CC) $(libc_crt_target_cflags) -o $@ -c $<
@@ -655,7 +659,7 @@ ALL_GENERATED_SOURCES += $(GEN)
 
 # We rename crtend.o to crtend_android.o to avoid a
 # name clash between gcc and bionic.
-GEN := $(TARGET_OUT_STATIC_LIBRARIES)/crtend_android.o
+GEN := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtend_android.o
 $(GEN): $(LOCAL_PATH)/arch-$(TARGET_ARCH)/bionic/crtend.S
 	@mkdir -p $(dir $@)
 	$(TARGET_CC) $(libc_crt_target_cflags) -o $@ -c $<
@@ -801,7 +805,7 @@ LOCAL_SRC_FILES := \
 	bionic/libc_init_dynamic.c
 
 ifeq ($(TARGET_ARCH),arm)
-	LOCAL_NO_CRT := true
+	#LOCAL_NO_CRT := true
 	LOCAL_CFLAGS += -DCRT_LEGACY_WORKAROUND
 
 	LOCAL_SRC_FILES := \
