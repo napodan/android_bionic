@@ -506,17 +506,16 @@ endif # mips
 libc_common_cflags := \
     -DWITH_ERRLIST \
     -DANDROID_CHANGES \
-    -DUSE_LOCKS \
-    -DREALLOC_ZERO_BYTES_FREES \
     -D_LIBC=1 \
-    -DSOFTFLOAT \
     -DFLOATING_POINT \
     -DINET6 \
     -I$(LOCAL_PATH)/private \
-    -DUSE_DL_PREFIX \
     -DPOSIX_MISTAKE \
-    -DLOG_ON_HEAP_ERROR \
-    -std=gnu99
+    -DUSE_LOCKS \
+	-DREALLOC_ZERO_BYTES_FREES 	\
+	-DSOFTFLOAT                     \
+	-DUSE_DL_PREFIX  \
+	-std=gnu99
 
 # these macro definitions are required to implement the
 # 'timezone' and 'daylight' global variables, as well as
@@ -590,14 +589,10 @@ else
     libc_common_cflags += -DANDROID_SMP=0
 endif
 
-# Needed to access private/__dso_handle.h from
-# crtbegin_xxx.c and crtend_xxx.c
-#
-libc_crt_target_cflags += -I$(LOCAL_PATH)/private
-
-ifeq ($(TARGET_ARCH),arm)
-libc_crt_target_cflags += -DCRT_LEGACY_WORKAROUND
-endif
+# crtbrand.c needs <stdint.h> and a #define for the platform SDK version.
+libc_crt_target_cflags += \
+    -I$(LOCAL_PATH)/include  \
+    -DPLATFORM_SDK_VERSION=$(PLATFORM_SDK_VERSION)
 
 # Define some common includes
 # ========================================================
@@ -609,8 +604,9 @@ libc_common_c_includes := \
 
 # Needed to access private/__dso_handle.h from
 # crtbegin_xxx.S and crtend_xxx.S
-#
-libc_crt_target_cflags += -I$(LOCAL_PATH)/private -I$(LOCAL_PATH)/arch-$(TARGET_ARCH)/include
+libc_crt_target_cflags += \
+    -I$(LOCAL_PATH)/private \
+    -I$(LOCAL_PATH)/arch-$(TARGET_ARCH)/include
 
 # Define the libc run-time (crt) support object files that must be built,
 # which are needed to build all other objects (shared/static libs and
@@ -626,7 +622,15 @@ libc_crt_target_cflags += -I$(LOCAL_PATH)/private -I$(LOCAL_PATH)/arch-$(TARGET_
 # that will call __cxa_finalize(&__dso_handle) in order to ensure that
 # static C++ destructors are properly called on dlclose().
 #
-
+ifeq ($(TARGET_ARCH),arm)
+    libc_crtbegin_extension := c
+    libc_crt_target_so_cflags :=
+    libc_crt_target_cflags += -DCRT_LEGACY_WORKAROUND
+endif
+ifeq ($(TARGET_ARCH),mips)
+    libc_crtbegin_extension := S
+    libc_crt_target_so_cflags := -fPIC
+endif
 ifeq ($(TARGET_ARCH),x86)
     libc_crtbegin_extension := S
     libc_crt_target_so_cflags := -fPIC
