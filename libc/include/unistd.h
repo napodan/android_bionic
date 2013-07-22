@@ -60,6 +60,7 @@ extern int    setpgid(pid_t, pid_t);
 extern pid_t  getppid(void);
 extern pid_t  getpgrp(void);
 extern int    setpgrp(void);
+extern pid_t  getsid(pid_t);
 extern pid_t  setsid(void);
 
 extern int execv(const char *, char * const *);
@@ -70,8 +71,9 @@ extern int execlp(const char *, const char *, ...);
 extern int execle(const char *, const char *, ...);
 extern int capget(cap_user_header_t hdrp, cap_user_data_t datap);
 extern int capset(cap_user_header_t hdrp, const cap_user_data_t datap);
-extern int prctl(int  option,  unsigned long arg2, unsigned long arg3,
-                 unsigned long arg4, unsigned long arg5);
+
+/* IMPORTANT: See comment under <sys/prctl.h> about this declaration */
+extern int prctl(int  option, ...);
 
 extern int nice(int);
 
@@ -106,6 +108,7 @@ extern void endusershell(void);
 #define F_OK  0  /* Existence */
 
 extern int access(const char *, int);
+extern int faccessat(int, const char *, int, int);
 extern int link(const char *, const char *);
 extern int unlink(const char *);
 extern int chdir(const char *);
@@ -128,7 +131,7 @@ extern int sync(void);
 
 extern int close(int);
 extern off_t lseek(int, off_t, int);
-extern loff_t lseek64(int, loff_t, int);
+extern off64_t lseek64(int, off64_t, int);
 
 extern ssize_t read(int, void *, size_t);
 extern ssize_t write(int, const void *, size_t);
@@ -145,6 +148,7 @@ extern int flock(int, int);
 extern int fsync(int);
 extern int fdatasync(int);
 extern int ftruncate(int, off_t);
+extern int ftruncate64(int, off64_t);
 
 extern int pause(void);
 extern unsigned int alarm(unsigned int);
@@ -189,7 +193,6 @@ extern pid_t tcgetpgrp(int fd);
 extern int   tcsetpgrp(int fd, pid_t _pid);
 
 #if 0 /* MISSING FROM BIONIC */
-extern pid_t  getsid(pid_t);
 extern int execvpe(const char *, char * const *, char * const *);
 extern int execlpe(const char *, const char *, ...);
 extern int getfsuid(uid_t);
