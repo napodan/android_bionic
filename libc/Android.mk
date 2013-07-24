@@ -281,6 +281,7 @@ libc_common_src_files := \
 	bionic/md5.c \
 	bionic/pututline.c \
 	bionic/realpath.c \
+	bionic/sched_getaffinity.c \
 	bionic/semaphore.c \
 	bionic/sha1.c \
 	bionic/strerror.cpp \
