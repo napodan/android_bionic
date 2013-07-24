@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2010 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,27 +25,17 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef _NETINET_IN_H_
-#define _NETINET_IN_H_
+#define _GNU_SOURCE 1
+#include <sched.h>
 
-#include <endian.h>
-#include <sys/socket.h>
-#include <linux/in.h>
-#include <linux/in6.h>
-#include <linux/ipv6.h>
-#include <netinet/in6.h>
-
-__BEGIN_DECLS
-
-#define IPPORT_RESERVED  1024
-
-#define INET_ADDRSTRLEN 16
-
-extern int bindresvport (int sd, struct sockaddr_in *sin);
-
-static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
-static const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
-
-__END_DECLS
-
-#endif /* _NETINET_IN_H_ */
+int  sched_getaffinity(pid_t pid, size_t setsize, cpu_set_t* set)
+{
+    int ret = __sched_getaffinity(pid, setsize, set);
+    if (ret >= 0) {
+        if ((size_t)ret < setsize) {
+            memset((char*)set + ret, '\0', setsize - (size_t)ret);
+        }
+        ret = 0;
+    }
+    return ret;
+}
