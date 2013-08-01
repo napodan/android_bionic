@@ -36,6 +36,7 @@
 #include <errno.h>
 #include <dlfcn.h>
 #include <sys/stat.h>
+#include <asm/elf.h>
 
 #include <pthread.h>
 
