@@ -258,6 +258,7 @@ libc_common_src_files := \
 	bionic/__strcat_chk.c \
 	bionic/strcoll.c \
 	bionic/__strcpy_chk.c \
+    	bionic/getauxval.cpp \
 	bionic/strerror.cpp \
 	bionic/strerror_r.cpp \
 	bionic/__strlcat_chk.c \
