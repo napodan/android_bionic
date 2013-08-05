@@ -25,51 +25,30 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef _DIRENT_H_
-#define _DIRENT_H_
 
-#include <stdint.h>
-#include <sys/cdefs.h>
+#include <sys/wait.h>
+#include <stddef.h>
 
-__BEGIN_DECLS
+extern "C" int __waitid(idtype_t which, id_t id, siginfo_t* info, int options, struct rusage* ru);
 
-#ifndef DT_UNKNOWN
-#define  DT_UNKNOWN     0
-#define  DT_FIFO        1
-#define  DT_CHR         2
-#define  DT_DIR         4
-#define  DT_BLK         6
-#define  DT_REG         8
-#define  DT_LNK         10
-#define  DT_SOCK        12
-#define  DT_WHT         14
-#endif
+pid_t wait(int* status) {
+  return wait4(-1, status, 0, NULL);
+}
 
-struct dirent {
-  uint64_t         d_ino;
-  int64_t          d_off;
-  unsigned short   d_reclen;
-  unsigned char    d_type;
-  char             d_name[256];
-};
+pid_t wait3(int* status, int options, struct rusage* rusage) {
+  return wait4(-1, status, options, rusage);
+}
 
-typedef struct DIR DIR;
+pid_t waitpid(pid_t pid, int* status, int options) {
+  return wait4(pid, status, options, NULL);
+}
 
-extern  DIR*             opendir(const char* dirpath);
-extern  DIR*             fdopendir(int fd);
-extern  struct dirent*   readdir(DIR* dirp);
-extern  int              readdir_r(DIR*  dirp, struct dirent* entry, struct dirent** result);
-extern  int              closedir(DIR* dirp);
-extern  void             rewinddir(DIR* dirp);
-extern  int              dirfd(DIR* dirp);
-extern  int              alphasort(const struct dirent** a, const struct dirent** b);
-extern  int              scandir(const char* dir, struct dirent*** namelist,
-                                 int(*filter)(const struct dirent*),
-                                 int(*compar)(const struct dirent**,
-                                              const struct dirent**));
+int waitid(idtype_t which, id_t id, siginfo_t* info, int options) {
+  /* the system call takes an option struct rusage that we don't need */
+  return __waitid(which, id, info, options, NULL);
+}
 
-extern  int              getdents(unsigned int, struct dirent*, unsigned int);
-
-__END_DECLS
-
-#endif /* _DIRENT_H_ */
+// TODO: remove this backward compatibility hack (for jb-mr1 strace binaries).
+extern "C" pid_t __wait4(pid_t pid, int* status, int options, struct rusage* rusage) {
+  return wait4(pid, status, options, rusage);
+}
