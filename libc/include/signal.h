@@ -28,6 +28,7 @@
 #ifndef _SIGNAL_H_
 #define _SIGNAL_H_
 
+#include <errno.h>
 #include <sys/cdefs.h>
 #include <limits.h>		/* For LONG_BIT */
 #include <string.h>		/* For memset() */
