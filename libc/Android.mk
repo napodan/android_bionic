@@ -11,8 +11,6 @@ libc_common_src_files := \
 	unistd/exec.c \
 	unistd/fnmatch.c \
 	unistd/getopt_long.c \
-	unistd/killpg.c \
-	unistd/popen.c \
 	unistd/syslog.c \
 	unistd/system.c \
 	unistd/time.c \
@@ -80,7 +78,6 @@ libc_common_src_files := \
 	stdio/vsscanf.c \
 	stdio/wbuf.c \
 	stdio/wsetup.c \
-	stdlib/assert.c \
 	stdlib/atexit.c \
 	stdlib/bsearch.c \
 	stdlib/ctype_.c \
@@ -172,6 +169,7 @@ libc_common_src_files := \
 	bionic/daemon.c \
 	bionic/dirname.c \
 	bionic/dirname_r.c \
+	bionic/daemon.c \
 	bionic/err.c \
 	bionic/ether_aton.c \
 	bionic/ether_ntoa.c \
@@ -185,7 +183,6 @@ libc_common_src_files := \
 	bionic/ftime.c \
 	bionic/ftok.c \
 	bionic/fts.c \
-	bionic/getcwd.cpp \
 	bionic/getdtablesize.c \
 	bionic/gethostname.c \
 	bionic/getpgrp.c \
@@ -198,6 +195,7 @@ libc_common_src_files := \
 	bionic/isatty.c \
 	bionic/issetugid.c \
 	bionic/ldexp.c \
+	bionic/lseek64.c \
 	bionic/libc_init_common.c \
 	bionic/locale.c \
 	bionic/logd_write.c \
@@ -258,9 +256,6 @@ libc_common_src_files := \
 	bionic/__strcat_chk.c \
 	bionic/strcoll.c \
 	bionic/__strcpy_chk.c \
-    	bionic/getauxval.cpp \
-	bionic/strerror.cpp \
-	bionic/strerror_r.cpp \
 	bionic/__strlcat_chk.c \
 	bionic/__strlcpy_chk.c \
 	bionic/__strlen_chk.c \
@@ -270,16 +265,13 @@ libc_common_src_files := \
 	bionic/strnlen.c \
 	bionic/strntoimax.c \
 	bionic/strntoumax.c \
-	bionic/strsignal.cpp \
 	bionic/strtotimeval.c \
-	bionic/stubs.cpp \
 	bionic/system_properties.c \
 	bionic/tcgetpgrp.c \
 	bionic/tcsetpgrp.c \
 	bionic/tdestroy.c \
 	bionic/thread_atexit.c \
 	bionic/time64.c \
-	bionic/tmpfile.cpp \
 	bionic/__umask_chk.c \
 	bionic/umount.c \
 	bionic/unlockpt.c \
@@ -322,31 +314,51 @@ libc_common_src_files := \
 	netbsd/nameser/ns_print.c \
 	netbsd/nameser/ns_samedomain.c \
 
+libc_bionic_src_files := \
+    bionic/assert.cpp \
+    bionic/brk.cpp \
+    bionic/dirent.cpp \
+    bionic/getauxval.cpp \
+    bionic/getcwd.cpp \
+    bionic/libc_logging.cpp \
+    bionic/scandir.cpp \
+    bionic/strerror.cpp \
+    bionic/strerror_r.cpp \
+    bionic/strsignal.cpp \
+    bionic/stubs.cpp \
+    bionic/tmpfile.cpp \
+    bionic/wait.cpp \
+
+libc_upstream_freebsd_src_files := \
+
+
 libc_upstream_netbsd_src_files := \
-	upstream-netbsd/libc/compat-43/creat.c \
-	upstream-netbsd/libc/gen/ftw.c \
-	upstream-netbsd/libc/gen/nftw.c \
-	upstream-netbsd/libc/gen/nice.c \
-	upstream-netbsd/libc/gen/psignal.c \
-	upstream-netbsd/libc/regex/regcomp.c \
-	upstream-netbsd/libc/regex/regerror.c \
-	upstream-netbsd/libc/regex/regexec.c \
-	upstream-netbsd/libc/regex/regfree.c \
-	upstream-netbsd/libc/stdio/getdelim.c \
-	upstream-netbsd/libc/stdio/getline.c \
-	upstream-netbsd/libc/stdlib/drand48.c \
-	upstream-netbsd/libc/stdlib/erand48.c \
-	upstream-netbsd/libc/stdlib/jrand48.c \
-	upstream-netbsd/libc/stdlib/lrand48.c \
-	upstream-netbsd/libc/stdlib/mrand48.c \
-	upstream-netbsd/libc/stdlib/nrand48.c \
-	upstream-netbsd/libc/stdlib/_rand48.c \
-	upstream-netbsd/libc/stdlib/seed48.c \
-	upstream-netbsd/libc/stdlib/srand48.c \
-	upstream-netbsd/libc/stdlib/tdelete.c \
-	upstream-netbsd/libc/stdlib/tfind.c \
-	upstream-netbsd/libc/stdlib/tsearch.c \
-	upstream-netbsd/libc/string/strxfrm.c \
+    upstream-netbsd/libc/compat-43/creat.c \
+    upstream-netbsd/libc/gen/ftw.c \
+    upstream-netbsd/libc/gen/nftw.c \
+    upstream-netbsd/libc/gen/nice.c \
+    upstream-netbsd/libc/gen/popen.c \
+    upstream-netbsd/libc/gen/psignal.c \
+    upstream-netbsd/libc/regex/regcomp.c \
+    upstream-netbsd/libc/regex/regerror.c \
+    upstream-netbsd/libc/regex/regexec.c \
+    upstream-netbsd/libc/regex/regfree.c \
+    upstream-netbsd/libc/stdio/getdelim.c \
+    upstream-netbsd/libc/stdio/getline.c \
+    upstream-netbsd/libc/stdlib/drand48.c \
+    upstream-netbsd/libc/stdlib/erand48.c \
+    upstream-netbsd/libc/stdlib/jrand48.c \
+    upstream-netbsd/libc/stdlib/lrand48.c \
+    upstream-netbsd/libc/stdlib/mrand48.c \
+    upstream-netbsd/libc/stdlib/nrand48.c \
+    upstream-netbsd/libc/stdlib/_rand48.c \
+    upstream-netbsd/libc/stdlib/seed48.c \
+    upstream-netbsd/libc/stdlib/srand48.c \
+    upstream-netbsd/libc/stdlib/tdelete.c \
+    upstream-netbsd/libc/stdlib/tfind.c \
+    upstream-netbsd/libc/stdlib/tsearch.c \
+    upstream-netbsd/libc/string/strxfrm.c \
+    upstream-netbsd/libc/unistd/killpg.c \
 
 # The following files are common, but must be compiled
 # with different C flags when building a static C library.
@@ -776,17 +788,35 @@ include $(BUILD_STATIC_LIBRARY)
 
 
 # ========================================================
+# libc_bionic.a - home-grown C library code
+# ========================================================
+#
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES := $(libc_bionic_src_files)
+LOCAL_CFLAGS := $(libc_common_cflags) -Werror
+LOCAL_C_INCLUDES := $(libc_common_c_includes)
+LOCAL_MODULE := libc_bionic
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_SYSTEM_SHARED_LIBRARIES :=
+
+include $(BUILD_STATIC_LIBRARY)
+
+
+# ========================================================
 # libc_common.a
 # ========================================================
 
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(libc_common_src_files)
-LOCAL_CFLAGS := $(libc_common_cflags)
+LOCAL_CFLAGS := $(libc_common_cflags) \
+    -std=gnu99 \
+    -I$(LOCAL_PATH)/upstream-netbsd/libc/include # for netbsd private headers
 LOCAL_C_INCLUDES := $(libc_common_c_includes)
 LOCAL_MODULE := libc_common
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
-LOCAL_WHOLE_STATIC_LIBRARIES := libbionic_ssp libc_netbsd
+LOCAL_WHOLE_STATIC_LIBRARIES := libbionic_ssp libc_bionic libc_netbsd
 LOCAL_SYSTEM_SHARED_LIBRARIES :=
 
 # TODO: split out the asflags.

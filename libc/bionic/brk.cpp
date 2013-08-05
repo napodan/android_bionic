@@ -25,39 +25,17 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
 #include <unistd.h>
-#include <fcntl.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include "libc_logging.h"
 
-extern int  __openat(int, const char*, int, int);
+/* Shared with sbrk.c. */
+extern "C" void* __bionic_brk; // TODO: should be __LIBC_HIDDEN__ but accidentally exported by NDK :-(
 
-int openat(int fd, const char *pathname, int flags, ...)
-{
-    mode_t  mode = 0;
-
-    flags |= O_LARGEFILE;
-
-    if (flags & O_CREAT)
-    {
-        va_list  args;
-
-        va_start(args, flags);
-        mode = (mode_t) va_arg(args, int);
-        va_end(args);
-    }
-
-    return __openat(fd, pathname, flags, mode);
-}
-
-int __openat_2(int fd, const char *pathname, int flags)
-{
-    if (flags & O_CREAT) {
-        __fortify_chk_fail("openat(O_CREAT) called without specifying a mode", 0);
-    }
-
-    flags |= O_LARGEFILE;
-
-    return __openat(fd, pathname, flags, 0);
+int brk(void* end_data) {
+  void* new_brk = __brk(end_data);
+  if (new_brk != end_data) {
+    return -1;
+  }
+  __bionic_brk = new_brk;
+  return 0;
 }

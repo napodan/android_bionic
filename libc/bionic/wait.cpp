@@ -25,39 +25,30 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include "libc_logging.h"
 
-extern int  __openat(int, const char*, int, int);
+#include <sys/wait.h>
+#include <stddef.h>
 
-int openat(int fd, const char *pathname, int flags, ...)
-{
-    mode_t  mode = 0;
+extern "C" int __waitid(idtype_t which, id_t id, siginfo_t* info, int options, struct rusage* ru);
 
-    flags |= O_LARGEFILE;
-
-    if (flags & O_CREAT)
-    {
-        va_list  args;
-
-        va_start(args, flags);
-        mode = (mode_t) va_arg(args, int);
-        va_end(args);
-    }
-
-    return __openat(fd, pathname, flags, mode);
+pid_t wait(int* status) {
+  return wait4(-1, status, 0, NULL);
 }
 
-int __openat_2(int fd, const char *pathname, int flags)
-{
-    if (flags & O_CREAT) {
-        __fortify_chk_fail("openat(O_CREAT) called without specifying a mode", 0);
-    }
+pid_t wait3(int* status, int options, struct rusage* rusage) {
+  return wait4(-1, status, options, rusage);
+}
 
-    flags |= O_LARGEFILE;
+pid_t waitpid(pid_t pid, int* status, int options) {
+  return wait4(pid, status, options, NULL);
+}
 
-    return __openat(fd, pathname, flags, 0);
+int waitid(idtype_t which, id_t id, siginfo_t* info, int options) {
+  /* the system call takes an option struct rusage that we don't need */
+  return __waitid(which, id, info, options, NULL);
+}
+
+// TODO: remove this backward compatibility hack (for jb-mr1 strace binaries).
+extern "C" pid_t __wait4(pid_t pid, int* status, int options, struct rusage* rusage) {
+  return wait4(pid, status, options, rusage);
 }
