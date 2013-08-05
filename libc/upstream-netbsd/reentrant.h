@@ -14,23 +14,25 @@
  * limitations under the License.
  */
 
-#ifndef _BIONIC_NETBSD_COMPAT_H_included
-#define _BIONIC_NETBSD_COMPAT_H_included
+#ifndef _BIONIC_NETBSD_REENTRANT_H_included
+#define _BIONIC_NETBSD_REENTRANT_H_included
 
-// NetBSD uses _DIAGASSERT to null-check arguments and the like.
-#include <assert.h>
-#define _DIAGASSERT(e) ((e) ? (void) 0 : __assert2(__FILE__, __LINE__, __func__, #e))
+#define _REENTRANT
 
-// TODO: update our <sys/cdefs.h> to support this properly.
-#define __type_fit(t, a) (0 == 0)
+#include <pthread.h>
+#include <signal.h>
 
-// TODO: our 2.6 emulator kernels don't support SOCK_CLOEXEC yet, so we have to do without.
-#define SOCK_CLOEXEC 0
+//
+// Map NetBSD libc internal locking to pthread locking.
+//
 
-#define _GNU_SOURCE
+#define MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
+#define mutex_t pthread_mutex_t
 
-// TODO: we don't yet have thread-safe environment variables.
-#define __readlockenv() 0
-#define __unlockenv() 0
+#define RWLOCK_INITIALIZER PTHREAD_RWLOCK_INITIALIZER
+#define rwlock_t pthread_rwlock_t
+#define rwlock_rdlock pthread_rwlock_rdlock
+#define rwlock_unlock pthread_rwlock_unlock
+#define rwlock_wrlock pthread_rwlock_wrlock
 
 #endif
