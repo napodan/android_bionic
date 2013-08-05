@@ -283,8 +283,6 @@ libc_common_src_files := \
 	bionic/utime.c \
 	bionic/utmp.c \
 	netbsd/gethnamaddr.c \
-	netbsd/isc/ev_timers.c \
-	netbsd/isc/ev_streams.c \
 	netbsd/inet/nsap_addr.c \
 	netbsd/resolv/__dn_comp.c \
 	netbsd/resolv/__res_close.c \
@@ -336,6 +334,8 @@ libc_upstream_netbsd_src_files := \
     upstream-netbsd/libc/gen/nice.c \
     upstream-netbsd/libc/gen/popen.c \
     upstream-netbsd/libc/gen/psignal.c \
+    upstream-netbsd/libc/isc/ev_streams.c \
+    upstream-netbsd/libc/isc/ev_timers.c \
     upstream-netbsd/libc/regex/regcomp.c \
     upstream-netbsd/libc/regex/regerror.c \
     upstream-netbsd/libc/regex/regexec.c \
