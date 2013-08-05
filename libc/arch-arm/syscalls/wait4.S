@@ -3,13 +3,13 @@
 #include <linux/err.h>
 #include <machine/asm.h>
 
-ENTRY(__rt_sigprocmask)
+ENTRY(wait4)
     mov     ip, r7
-    ldr     r7, =__NR_rt_sigprocmask
+    ldr     r7, =__NR_wait4
     swi     #0
     mov     r7, ip
     cmn     r0, #(MAX_ERRNO + 1)
     bxls    lr
     neg     r0, r0
     b       __set_errno
-END(__rt_sigprocmask)
+END(wait4)
