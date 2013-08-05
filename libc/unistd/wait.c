@@ -33,17 +33,17 @@ extern int    __waitid(idtype_t which, id_t id, siginfo_t *info, int options, st
 
 pid_t  wait( int*  status )
 {
-    return __wait4( (pid_t)-1, status, 0, NULL );
+    return wait4( (pid_t)-1, status, 0, NULL );
 }
 
 pid_t  wait3(int*  status, int options, struct rusage*  rusage)
 {
-    return __wait4( (pid_t)-1, status, options, rusage );
+    return wait4( (pid_t)-1, status, options, rusage );
 }
 
 pid_t  waitpid(pid_t  pid, int*  status, int  options)
 {
-    return __wait4( pid, status, options, NULL );
+    return wait4( pid, status, options, NULL );
 }
 
 int  waitid(idtype_t which, id_t id, siginfo_t *info, int options)
