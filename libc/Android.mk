@@ -12,10 +12,6 @@ libc_common_src_files := \
 	unistd/fnmatch.c \
 	unistd/getopt_long.c \
 	unistd/raise.c \
-	unistd/reboot.c \
-	unistd/recv.c \
-	unistd/sbrk.c \
-	unistd/send.c \
 	unistd/setegid.c \
 	unistd/setuid.c \
 	unistd/seteuid.c \
@@ -272,9 +268,12 @@ libc_common_src_files := \
 	bionic/ptsname_r.c \
 	bionic/pututline.c \
 	bionic/pwrite.c \
+	bionic/reboot.c \
+	bionic/recv.c \
 	bionic/realpath.c \
 	bionic/sched_getaffinity.c \
 	bionic/semaphore.c \
+	bionic/send.c \
 	bionic/sha1.c \
 	bionic/stubs.c \
 	bionic/system_properties.c \
@@ -318,6 +317,7 @@ libc_bionic_src_files := \
     bionic/getauxval.cpp \
     bionic/getcwd.cpp \
     bionic/libc_logging.cpp \
+    bionic/sbrk.cpp \
     bionic/scandir.cpp \
     bionic/strerror.cpp \
     bionic/strerror_r.cpp \
