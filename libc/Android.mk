@@ -226,7 +226,6 @@ libc_common_src_files := \
 	bionic/realpath.c \
 	bionic/reboot.c \
 	bionic/recv.c \
-	bionic/sbrk.c \
 	bionic/sched_cpualloc.c \
 	bionic/sched_cpucount.c \
 	bionic/sched_getaffinity.c \
@@ -240,7 +239,6 @@ libc_common_src_files := \
 	bionic/setresuid.c \
 	bionic/setreuid.c \
 	bionic/setuid.c \
-	bionic/sha1.c \
 	bionic/sigblock.c \
 	bionic/siginterrupt.c \
 	bionic/siglist.c \
@@ -280,7 +278,6 @@ libc_common_src_files := \
 	bionic/utmp.c \
 	bionic/__vsnprintf_chk.c \
 	bionic/__vsprintf_chk.c \
-	bionic/wait.c \
 	bionic/wchar.c \
 	bionic/wcscoll.c \
 	netbsd/gethnamaddr.c \
@@ -319,6 +316,7 @@ libc_bionic_src_files := \
     bionic/getauxval.cpp \
     bionic/getcwd.cpp \
     bionic/libc_logging.cpp \
+    bionic/sbrk.cpp \
     bionic/scandir.cpp \
     bionic/strerror.cpp \
     bionic/strerror_r.cpp \
