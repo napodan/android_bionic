@@ -28,28 +28,37 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <private/logd.h>
+#include "libc_logging.h"
 
 /*
- * Runtime implementation of __builtin____strncpy_chk.
+ * Runtime implementation of __strlen_chk.
  *
  * See
  *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
  *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
  * for details.
  *
- * This strncpy check is called if _FORTIFY_SOURCE is defined and
+ * This strlen check is called if _FORTIFY_SOURCE is defined and
  * greater than 0.
+ *
+ * This test is designed to detect code such as:
+ *
+ * int main() {
+ *   char buf[10];
+ *   memcpy(buf, "1234567890", sizeof(buf));
+ *   size_t len = strlen(buf); // segfault here with _FORTIFY_SOURCE
+ *   printf("%d\n", len);
+ *   return 0;
+ * }
+ *
+ * or anytime strlen reads beyond an object boundary.
  */
-char *__strncpy_chk (char *dest, const char *src,
-              size_t len, size_t dest_len)
-{
-    if (len > dest_len) {
-        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
-            "*** strncpy buffer overflow detected ***\n");
-        __libc_android_log_event_uid(BIONIC_EVENT_STRNCPY_BUFFER_OVERFLOW);
-        abort();
+extern "C" size_t __strlen_chk(const char *s, size_t s_len) {
+    size_t ret = strlen(s);
+
+    if (__builtin_expect(ret >= s_len, 0)) {
+        __fortify_chk_fail("strlen read overflow", 0);
     }
 
-    return strncpy(dest, src, len);
+    return ret;
 }

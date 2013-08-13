@@ -28,40 +28,26 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <private/logd.h>
+#include "libc_logging.h"
 
 /*
- * Runtime implementation of __strlen_chk.
+ * __strlcat_chk. Called in place of strlcat() when we know the
+ * size of the buffer we're writing into.
  *
  * See
  *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
  *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
  * for details.
  *
- * This strlen check is called if _FORTIFY_SOURCE is defined and
+ * This strlcat check is called if _FORTIFY_SOURCE is defined and
  * greater than 0.
- *
- * This test is designed to detect code such as:
- *
- * int main() {
- *   char buf[10];
- *   memcpy(buf, "1234567890", sizeof(buf));
- *   size_t len = strlen(buf); // segfault here with _FORTIFY_SOURCE
- *   printf("%d\n", len);
- *   return 0;
- * }
- *
- * or anytime strlen reads beyond an object boundary.
  */
-size_t __strlen_chk(const char *s, size_t s_len)
+extern "C" size_t __strlcat_chk(char *dest, const char *src,
+              size_t supplied_size, size_t dest_len_from_compiler)
 {
-    size_t ret = strlen(s);
-
-    if (__builtin_expect(ret >= s_len, 0)) {
-        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
-            "*** strlen read overflow detected ***\n");
-        abort();
+    if (supplied_size > dest_len_from_compiler) {
+        __fortify_chk_fail("strlcat buffer overflow", 0);
     }
 
-    return ret;
+    return strlcat(dest, src, supplied_size);
 }

@@ -25,23 +25,11 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <stddef.h>
-#include <string.h>
 
-void *memccpy(void *dst, const void *src, int c, size_t n)
-{
-    char*        q     = dst;
-    const char*  p     = src;
-    const char*  p_end = p + n;
-    char         ch    = ~(char)c;  /* ensure ch != c */
+#include <locale.h>
+#include <stdlib.h>
 
-    for (;;) {
-        if (ch == c || p >= p_end) break;
-        *q++ = ch = *p++;
-    }
-
-    if (p >= p_end && ch != c)
-        return NULL;
-
-    return q;
+// setlocale(3) always fails on bionic.
+char* setlocale(int /*category*/, char const* /*locale*/) {
+    return NULL;
 }
