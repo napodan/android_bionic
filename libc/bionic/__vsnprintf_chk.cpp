@@ -28,33 +28,60 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <private/logd.h>
+#include <stdarg.h>
+#include "libc_logging.h"
 
 /*
- * __fgets_chk. Called in place of fgets() when we know the
- * size of the buffer we're writing into.
+ * Runtime implementation of __builtin____vsnprintf_chk.
  *
  * See
  *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+ *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
  * for details.
  *
- * This fgets check is called if _FORTIFY_SOURCE is defined and
+ * This vsnprintf check is called if _FORTIFY_SOURCE is defined and
  * greater than 0.
  */
-char *__fgets_chk(char *dest, int supplied_size,
-                  FILE *stream, size_t dest_len_from_compiler)
+extern "C" int __vsnprintf_chk(
+        char *dest,
+        size_t supplied_size,
+        int /*flags*/,
+        size_t dest_len_from_compiler,
+        const char *format,
+        va_list va)
 {
-    if (supplied_size < 0) {
-        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
-            "*** fgets buffer size less than 0 ***\n");
-        abort();
+    if (supplied_size > dest_len_from_compiler) {
+        __fortify_chk_fail("vsnprintf buffer overflow", 0);
     }
 
-    if (((size_t) supplied_size) > dest_len_from_compiler) {
-        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
-            "*** fgets buffer overflow detected ***\n");
-        abort();
-    }
+    return vsnprintf(dest, supplied_size, format, va);
+}
 
-    return fgets(dest, supplied_size, stream);
+/*
+ * Runtime implementation of __builtin____snprintf_chk.
+ *
+ * See
+ *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+ *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
+ * for details.
+ *
+ * This snprintf check is called if _FORTIFY_SOURCE is defined and
+ * greater than 0.
+ */
+extern "C" int __snprintf_chk(
+        char *dest,
+        size_t supplied_size,
+        int flags,
+        size_t dest_len_from_compiler,
+        const char *format, ...)
+{
+    va_list va;
+    int retval;
+
+    va_start(va, format);
+    retval = __vsnprintf_chk(dest, supplied_size, flags,
+                             dest_len_from_compiler, format, va);
+    va_end(va);
+
+    return retval;
 }
