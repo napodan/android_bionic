@@ -28,29 +28,26 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <private/logd.h>
+#include "libc_logging.h"
 
 /*
- * Runtime implementation of __builtin____strcpy_chk.
+ * Runtime implementation of __builtin____memmove_chk.
  *
  * See
  *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
  *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
  * for details.
  *
- * This strcpy check is called if _FORTIFY_SOURCE is defined and
+ * This memmove check is called if _FORTIFY_SOURCE is defined and
  * greater than 0.
  */
-char *__strcpy_chk (char *dest, const char *src, size_t dest_len)
+extern "C" void *__memmove_chk (void *dest, const void *src,
+              size_t len, size_t dest_len)
 {
-    // TODO: optimize so we don't scan src twice.
-    size_t src_len = strlen(src) + 1;
-    if (src_len > dest_len) {
-        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
-            "*** strcpy buffer overflow detected ***\n");
-        __libc_android_log_event_uid(BIONIC_EVENT_STRCPY_BUFFER_OVERFLOW);
-        abort();
+    if (len > dest_len) {
+        __fortify_chk_fail("memmove buffer overflow",
+                             BIONIC_EVENT_MEMMOVE_BUFFER_OVERFLOW);
     }
 
-    return strcpy(dest, src);
+    return memmove(dest, src, len);
 }

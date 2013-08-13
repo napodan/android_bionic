@@ -11,7 +11,6 @@ libc_common_src_files := \
 	unistd/exec.c \
 	unistd/fnmatch.c \
 	unistd/getopt_long.c \
-	unistd/raise.c \
 	unistd/syslog.c \
 	unistd/system.c \
 	unistd/time.c \
@@ -79,26 +78,13 @@ libc_common_src_files := \
 	stdio/vsscanf.c \
 	stdio/wbuf.c \
 	stdio/wsetup.c \
-	stdlib/_rand48.c \
 	stdlib/atexit.c \
-	stdlib/bsearch.c \
 	stdlib/ctype_.c \
-	stdlib/div.c \
 	stdlib/exit.c \
 	stdlib/getenv.c \
-	stdlib/jrand48.c \
-	stdlib/ldiv.c \
-	stdlib/lldiv.c \
-	stdlib/locale.c \
-	stdlib/lrand48.c \
-	stdlib/mrand48.c \
-	stdlib/nrand48.c \
 	stdlib/putenv.c \
 	stdlib/qsort.c \
-	stdlib/seed48.c \
 	stdlib/setenv.c \
-	stdlib/setjmperr.c \
-	stdlib/srand48.c \
 	stdlib/strtod.c \
 	stdlib/strtoimax.c \
 	stdlib/strtol.c \
@@ -108,14 +94,10 @@ libc_common_src_files := \
 	stdlib/strtoumax.c \
 	stdlib/tolower_.c \
 	stdlib/toupper_.c \
-	stdlib/wchar.c \
 	string/index.c \
-	string/memccpy.c \
 	string/strcasecmp.c \
-	string/strcasestr.c \
 	string/strcat.c \
 	string/strchr.c \
-	string/strcoll.c \
 	string/strcspn.c \
 	string/strdup.c \
 	string/strlcat.c \
@@ -128,16 +110,6 @@ libc_common_src_files := \
 	string/strspn.c \
 	string/strstr.c \
 	string/strtok.c \
-	string/__memcpy_chk.c \
-	string/__memmove_chk.c \
-	string/__memset_chk.c \
-	string/__strcat_chk.c \
-	string/__strcpy_chk.c \
-	string/__strlcat_chk.c \
-	string/__strlcpy_chk.c \
-	string/__strlen_chk.c \
-	string/__strncat_chk.c \
-	string/__strncpy_chk.c \
 	wchar/wcpcpy.c \
 	wchar/wcpncpy.c \
 	wchar/wcscasecmp.c \
@@ -313,17 +285,30 @@ libc_bionic_src_files := \
     bionic/getauxval.cpp \
     bionic/getcwd.cpp \
     bionic/libc_logging.cpp \
+    bionic/__memcpy_chk.cpp \
+    bionic/__memmove_chk.cpp \
+    bionic/__memset_chk.cpp \
+    bionic/raise.c \
     bionic/sbrk.cpp \
     bionic/scandir.cpp \
+    bionic/setlocale.cpp \
     bionic/sigwait.cpp \
+    bionic/__strcat_chk.cpp \
+    bionic/__strcpy_chk.cpp \
     bionic/strerror.cpp \
     bionic/strerror_r.cpp \
+    bionic/__strlcat_chk.cpp \
+    bionic/__strlcpy_chk.cpp \
+    bionic/__strlen_chk.cpp \
+    bionic/__strncat_chk.cpp \
+    bionic/__strncpy_chk.cpp \
     bionic/strsignal.cpp \
     bionic/sysconf.cpp \
     bionic/tmpfile.cpp \
     bionic/__vsnprintf_chk.cpp \
     bionic/__vsprintf_chk.cpp \
     bionic/wait.cpp \
+    bionic/wchar.cpp \
 
 libc_upstream_freebsd_src_files := \
 
@@ -335,15 +320,30 @@ libc_upstream_netbsd_src_files := \
     upstream-netbsd/libc/gen/nice.c \
     upstream-netbsd/libc/gen/popen.c \
     upstream-netbsd/libc/gen/psignal.c \
+    upstream-netbsd/libc/gen/setjmperr.c \
     upstream-netbsd/libc/isc/ev_streams.c \
     upstream-netbsd/libc/isc/ev_timers.c \
     upstream-netbsd/libc/regex/regcomp.c \
     upstream-netbsd/libc/regex/regerror.c \
     upstream-netbsd/libc/regex/regexec.c \
     upstream-netbsd/libc/regex/regfree.c \
+    upstream-netbsd/libc/stdlib/bsearch.c \
+    upstream-netbsd/libc/stdlib/div.c \
+    upstream-netbsd/libc/stdlib/jrand48.c \
+    upstream-netbsd/libc/stdlib/ldiv.c \
+    upstream-netbsd/libc/stdlib/lldiv.c \
+    upstream-netbsd/libc/stdlib/lrand48.c \
+    upstream-netbsd/libc/stdlib/mrand48.c \
+    upstream-netbsd/libc/stdlib/nrand48.c \
+    upstream-netbsd/libc/stdlib/_rand48.c \
+    upstream-netbsd/libc/stdlib/seed48.c \
+    upstream-netbsd/libc/stdlib/srand48.c \
     upstream-netbsd/libc/stdlib/tdelete.c \
     upstream-netbsd/libc/stdlib/tfind.c \
     upstream-netbsd/libc/stdlib/tsearch.c \
+    upstream-netbsd/libc/string/memccpy.c \
+    upstream-netbsd/libc/string/strcasestr.c \
+    upstream-netbsd/libc/string/strcoll.c \
     upstream-netbsd/libc/string/strxfrm.c \
     upstream-netbsd/libc/unistd/killpg.c \
 
@@ -394,7 +394,6 @@ libc_common_src_files += \
 	arch-arm/bionic/syscall.S \
 	string/bcopy.c \
 	string/strncmp.c \
-	unistd/socketcalls.c
 
 # These files need to be arm so that gdbserver
 # can set breakpoints in them without messing
