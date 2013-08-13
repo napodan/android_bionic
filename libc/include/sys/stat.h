@@ -41,6 +41,39 @@ __BEGIN_DECLS
  * Note: The kernel zero's the padded region because glibc might read them
  * in the hope that the kernel has stretched to using larger sizes.
  */
+#ifdef __mips__
+struct stat {
+    unsigned long       st_dev;
+    unsigned long       __pad0[3];
+
+    unsigned long long  st_ino;
+
+    unsigned int        st_mode;
+    unsigned int        st_nlink;
+
+    unsigned long       st_uid;
+    unsigned long       st_gid;
+
+    unsigned long       st_rdev;
+    unsigned long       __pad1[3];
+
+    long long           st_size;
+
+    unsigned long       st_atime;
+    unsigned long       st_atime_nsec;
+
+    unsigned long       st_mtime;
+    unsigned long       st_mtime_nsec;
+
+    unsigned long       st_ctime;
+    unsigned long       st_ctime_nsec;
+
+    unsigned long       st_blksize;
+    unsigned long       __pad2;
+
+    unsigned long long  st_blocks;
+};
+#else
 struct stat {
     unsigned long long  st_dev;
     unsigned char       __pad0[4];
@@ -70,6 +103,7 @@ struct stat {
 
     unsigned long long  st_ino;
 };
+#endif
 
 /* For compatibility with GLibc, we provide macro aliases
  * for the non-Posix nano-seconds accessors.
@@ -77,6 +111,13 @@ struct stat {
 #define  st_atimensec  st_atime_nsec
 #define  st_mtimensec  st_mtime_nsec
 #define  st_ctimensec  st_ctime_nsec
+
+#ifdef __USE_BSD
+/* Permission macros provided by glibc for compatibility with BSDs. */
+#define ACCESSPERMS (S_IRWXU | S_IRWXG | S_IRWXO) /* 0777 */
+#define ALLPERMS    (S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO) /* 07777 */
+#define DEFFILEMODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) /* 0666 */
+#endif
 
 extern int    chmod(const char *, mode_t);
 extern int    fchmod(int, mode_t);
@@ -87,6 +128,27 @@ extern int    fstat(int, struct stat *);
 extern int    lstat(const char *, struct stat *);
 extern int    mknod(const char *, mode_t, dev_t);
 extern mode_t umask(mode_t);
+
+#if defined(__BIONIC_FORTIFY)
+
+extern mode_t __umask_chk(mode_t);
+extern mode_t __umask_real(mode_t)
+    __asm__(__USER_LABEL_PREFIX__ "umask");
+extern void __umask_error()
+    __attribute__((__error__("umask called with invalid mode")));
+
+__BIONIC_FORTIFY_INLINE
+mode_t umask(mode_t mode) {
+  if (__builtin_constant_p(mode)) {
+    if ((mode & 0777) != mode) {
+      __umask_error();
+    }
+    return __umask_real(mode);
+  }
+  return __umask_chk(mode);
+}
+#endif /* defined(__BIONIC_FORTIFY) */
+
 
 #define  stat64    stat
 #define  fstat64   fstat
@@ -102,6 +164,10 @@ extern int  mkdirat(int dirfd, const char *pathname, mode_t mode);
 extern int fchownat(int dirfd, const char *path, uid_t owner, gid_t group, int flags);
 extern int fchmodat(int dirfd, const char *path, mode_t mode, int flags);
 extern int renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath);
+
+# define UTIME_NOW      ((1l << 30) - 1l)
+# define UTIME_OMIT     ((1l << 30) - 2l)
+extern int utimensat (int fd, const char *path, const struct timespec times[2], int flags);
 
 __END_DECLS
 
