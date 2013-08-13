@@ -25,10 +25,29 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <unistd.h>
-#include <sys/reboot.h>
 
-int reboot (int  mode) 
-{
-    return __reboot( LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, mode, NULL );
+#include <errno.h>
+#include <signal.h>
+#include <string.h>
+#include <time.h>
+
+#include <private/kernel_sigset_t.h>
+
+extern "C" int __rt_sigtimedwait(const sigset_t* uthese, siginfo_t* uinfo, const struct timespec* uts, size_t sigsetsize);
+
+int sigwait(const sigset_t* set, int* sig) {
+  kernel_sigset_t sigset(set);
+  while (true) {
+    // __rt_sigtimedwait can return EAGAIN or EINTR, we need to loop
+    // around them since sigwait is only allowed to return EINVAL.
+    int result = __rt_sigtimedwait(sigset.get(), NULL, NULL, sizeof(sigset));
+    if (result >= 0) {
+      *sig = result;
+      return 0;
+    }
+
+    if (errno != EAGAIN && errno != EINTR) {
+      return errno;
+    }
+  }
 }
