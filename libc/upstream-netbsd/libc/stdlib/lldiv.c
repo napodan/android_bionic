@@ -1,7 +1,8 @@
-/*	$OpenBSD: ldiv.c,v 1.5 2005/08/08 08:05:36 espie Exp $ */
+/*	$NetBSD: lldiv.c,v 1.4 2012/06/25 22:32:45 abs Exp $	*/
+
 /*
- * Copyright (c) 1990 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Chris Torek.
@@ -31,12 +32,27 @@
  * SUCH DAMAGE.
  */
 
-#include <stdlib.h>		/* ldiv_t */
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char sccsid[] = "from: @(#)ldiv.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: lldiv.c,v 1.4 2012/06/25 22:32:45 abs Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
 
-ldiv_t
-ldiv(long num, long denom)
+#include "namespace.h"
+#include <stdlib.h>		/* lldiv_t */
+
+#ifdef __weak_alias
+__weak_alias(lldiv, _lldiv)
+#endif
+
+/* LONGLONG */
+lldiv_t
+lldiv(long long int num, long long int denom)
 {
-	ldiv_t r;
+	lldiv_t r;
 
 	/* see div.c for comments */
 

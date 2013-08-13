@@ -26,31 +26,28 @@
  * SUCH DAMAGE.
  */
 
-#undef _FORTIFY_SOURCE
 #include <string.h>
 #include <stdlib.h>
-#include <private/logd.h>
+#include "libc_logging.h"
 
 /*
- * Runtime implementation of __memcpy_chk.
+ * __strlcpy_chk. Called in place of strlcpy() when we know the
+ * size of the buffer we're writing into.
  *
  * See
  *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
  *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
  * for details.
  *
- * This memcpy check is called if _FORTIFY_SOURCE is defined and
+ * This strlcpy check is called if _FORTIFY_SOURCE is defined and
  * greater than 0.
  */
-void *__memcpy_chk(void *dest, const void *src,
-              size_t copy_amount, size_t dest_len)
+extern "C" size_t __strlcpy_chk(char *dest, const char *src,
+              size_t supplied_size, size_t dest_len_from_compiler)
 {
-    if (__builtin_expect(copy_amount > dest_len, 0)) {
-        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
-            "*** memcpy buffer overflow detected ***\n");
-        __libc_android_log_event_uid(BIONIC_EVENT_MEMCPY_BUFFER_OVERFLOW);
-        abort();
+    if (supplied_size > dest_len_from_compiler) {
+        __fortify_chk_fail("strlcpy buffer overflow", 0);
     }
 
-    return memcpy(dest, src, copy_amount);
+    return strlcpy(dest, src, supplied_size);
 }
