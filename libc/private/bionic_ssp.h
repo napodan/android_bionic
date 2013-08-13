@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,34 +25,21 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <stdio.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <errno.h>
-#include <string.h>
 
-int    ptsname_r( int  fd, char*  buf, size_t  buflen)
-{
-    unsigned int  pty_num;
-    char          buff[64];
-    int           len;
+#ifndef _PRIVATE_SSP_H
+#define _PRIVATE_SSP_H
 
-    if (buf == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
+#include <stdint.h>
+#include <sys/cdefs.h>
 
-    if ( ioctl( fd, TIOCGPTN, &pty_num ) != 0 ) {
-        errno = ENOTTY;
-        return -1;
-    }
+__BEGIN_DECLS
 
-    len = snprintf( buff, sizeof(buff), "/dev/pts/%u", pty_num );
-    if (len+1 > (int)buflen) {
-        errno = ERANGE;
-        return -1;
-    }
-    memcpy( buf, buff, len+1 );
-    return 0;
-}
+/* GCC uses this on ARM and MIPS; we use it on x86 to set the guard in TLS. */
+extern uintptr_t __stack_chk_guard;
+
+/* GCC calls this if a stack guard check fails. */
+extern void __stack_chk_fail();
+
+__END_DECLS
+
+#endif

@@ -12,30 +12,9 @@ libc_common_src_files := \
 	unistd/fnmatch.c \
 	unistd/getopt_long.c \
 	unistd/raise.c \
-	unistd/setegid.c \
-	unistd/setuid.c \
-	unistd/seteuid.c \
-	unistd/setreuid.c \
-	unistd/setresuid.c \
-	unistd/setpgrp.c \
-	unistd/sigblock.c \
-	unistd/siginterrupt.c \
-	unistd/siglist.c \
-	unistd/signal.c \
-	unistd/signame.c \
-	unistd/sigsetmask.c \
-	unistd/sigsuspend.c \
-	unistd/sigwait.c \
-	unistd/sleep.c \
-	unistd/statfs.c \
 	unistd/syslog.c \
 	unistd/system.c \
-	unistd/tcgetpgrp.c \
-	unistd/tcsetpgrp.c \
 	unistd/time.c \
-	unistd/umount.c \
-	unistd/unlockpt.c \
-	unistd/usleep.c \
 	stdio/asprintf.c \
 	stdio/clrerr.c \
 	stdio/fclose.c \
@@ -50,7 +29,6 @@ libc_common_src_files := \
 	stdio/fileno.c \
 	stdio/findfp.c \
 	stdio/flags.c \
-	stdio/flockfile.c \
 	stdio/fopen.c \
 	stdio/fprintf.c \
 	stdio/fpurge.c \
@@ -89,7 +67,6 @@ libc_common_src_files := \
 	stdio/sscanf.c \
 	stdio/stdio.c \
 	stdio/tempnam.c \
-	stdio/tmpfile.c \
 	stdio/tmpnam.c \
 	stdio/ungetc.c \
 	stdio/vasprintf.c \
@@ -102,16 +79,8 @@ libc_common_src_files := \
 	stdio/vsscanf.c \
 	stdio/wbuf.c \
 	stdio/wsetup.c \
-	stdio/__fgets_chk.c \
-	stdio/__snprintf_chk.c \
-	stdio/__sprintf_chk.c \
-	stdio/__vsnprintf_chk.c \
-	stdio/__vsprintf_chk.c \
 	stdlib/_rand48.c \
 	stdlib/atexit.c \
-	stdlib/atoi.c \
-	stdlib/atol.c \
-	stdlib/atoll.c \
 	stdlib/bsearch.c \
 	stdlib/ctype_.c \
 	stdlib/div.c \
@@ -130,8 +99,6 @@ libc_common_src_files := \
 	stdlib/setenv.c \
 	stdlib/setjmperr.c \
 	stdlib/srand48.c \
-	stdlib/strntoimax.c \
-	stdlib/strntoumax.c \
 	stdlib/strtod.c \
 	stdlib/strtoimax.c \
 	stdlib/strtol.c \
@@ -144,10 +111,6 @@ libc_common_src_files := \
 	stdlib/wchar.c \
 	string/index.c \
 	string/memccpy.c \
-	string/memchr.c \
-	string/memmem.c \
-	string/memrchr.c \
-	string/memswap.c \
 	string/strcasecmp.c \
 	string/strcasestr.c \
 	string/strcat.c \
@@ -159,15 +122,12 @@ libc_common_src_files := \
 	string/strlcpy.c \
 	string/strncat.c \
 	string/strncpy.c \
-	string/strndup.c \
-	string/strnlen.c \
 	string/strpbrk.c \
 	string/strrchr.c \
 	string/strsep.c \
 	string/strspn.c \
 	string/strstr.c \
 	string/strtok.c \
-	string/strtotimeval.c \
 	string/__memcpy_chk.c \
 	string/__memmove_chk.c \
 	string/__memset_chk.c \
@@ -184,7 +144,6 @@ libc_common_src_files := \
 	wchar/wcscat.c \
 	wchar/wcschr.c \
 	wchar/wcscmp.c \
-	wchar/wcscoll.c \
 	wchar/wcscpy.c \
 	wchar/wcscspn.c \
 	wchar/wcsdup.c \
@@ -208,14 +167,11 @@ libc_common_src_files := \
 	wchar/wmemcpy.c \
 	wchar/wmemmove.c \
 	wchar/wmemset.c \
-	inet/bindresvport.c \
 	inet/inet_addr.c \
 	inet/inet_aton.c \
 	inet/inet_ntoa.c \
 	inet/inet_ntop.c \
 	inet/inet_pton.c \
-	inet/ether_aton.c \
-	inet/ether_ntoa.c \
 	tzcode/asctime.c \
 	tzcode/difftime.c \
 	tzcode/localtime.c \
@@ -225,6 +181,10 @@ libc_common_src_files := \
 	bionic/_rand48.c \
 	bionic/cpuacct.c \
 	bionic/arc4random.c \
+	bionic/atoi.c \
+	bionic/atol.c \
+	bionic/atoll.c \
+	bionic/bindresvport.c \
 	bionic/basename.c \
 	bionic/basename_r.c \
 	bionic/clearenv.c \
@@ -234,8 +194,11 @@ libc_common_src_files := \
 	bionic/erand48.c \
 	bionic/daemon.c \
 	bionic/err.c \
+	bionic/ether_aton.c \
+	bionic/ether_ntoa.c \
 	bionic/fcntl.c \
 	bionic/fdprintf.c \
+	bionic/flockfile.c \
 	bionic/fork.c \
 	bionic/fstatfs.c \
 	bionic/ftime.c \
@@ -257,6 +220,10 @@ libc_common_src_files := \
 	bionic/libc_init_common.c \
 	bionic/logd_write.c \
 	bionic/md5.c \
+	bionic/memchr.c \
+	bionic/memmem.c \
+	bionic/memrchr.c \
+	bionic/memswap.c \
 	bionic/mmap.c \
 	bionic/openat.c \
 	bionic/open.c \
@@ -274,13 +241,39 @@ libc_common_src_files := \
 	bionic/sched_getaffinity.c \
 	bionic/semaphore.c \
 	bionic/send.c \
+	bionic/setegid.c \
+	bionic/seteuid.c \
+	bionic/setpgrp.c \
+	bionic/setresuid.c \
+	bionic/setreuid.c \
+	bionic/setuid.c \
+	bionic/sigblock.c \
+	bionic/siginterrupt.c \
+	bionic/siglist.c \
+	bionic/signal.c \
+	bionic/signame.c \
+	bionic/sigsetmask.c \
+	bionic/sigsuspend.c \
+	bionic/sleep.c \
+	bionic/statfs.c \
+	bionic/strndup.c \
+	bionic/strnlen.c \
 	bionic/sha1.c \
 	bionic/stubs.c \
+	bionic/strntoimax.c \
+	bionic/strntoumax.c \
+	bionic/strtotimeval.c \
 	bionic/system_properties.c \
+	bionic/tcgetpgrp.c \
+	bionic/tcsetpgrp.c \
 	bionic/thread_atexit.c \
 	bionic/time64.c \
 	bionic/utime.c \
+	bionic/umount.c \
+	bionic/unlockpt.c \
+	bionic/usleep.c \
 	bionic/utmp.c \
+	bionic/wcscoll.c \
 	netbsd/gethnamaddr.c \
 	netbsd/inet/nsap_addr.c \
 	netbsd/resolv/__dn_comp.c \
@@ -314,14 +307,20 @@ libc_bionic_src_files := \
     bionic/assert.cpp \
     bionic/brk.cpp \
     bionic/dirent.cpp \
+    bionic/__fgets_chk.cpp \
     bionic/getauxval.cpp \
     bionic/getcwd.cpp \
     bionic/libc_logging.cpp \
     bionic/sbrk.cpp \
     bionic/scandir.cpp \
+    bionic/sigwait.cpp \
     bionic/strerror.cpp \
     bionic/strerror_r.cpp \
     bionic/strsignal.cpp \
+    bionic/sysconf.cpp \
+    bionic/tmpfile.cpp \
+    bionic/__vsnprintf_chk.cpp \
+    bionic/__vsprintf_chk.cpp \
     bionic/wait.cpp \
 
 libc_upstream_freebsd_src_files := \
@@ -360,13 +359,13 @@ libc_upstream_netbsd_src_files := \
 #       below.
 #
 libc_static_common_src_files := \
-        unistd/sysconf.c \
         bionic/__errno.c \
 
 # Architecture specific source files go here
 # =========================================================
 ifeq ($(TARGET_ARCH),arm)
 libc_common_src_files += \
+	bionic/memmove.c.arm \
 	bionic/bionic_clone.c \
 	arch-arm/bionic/__get_pc.S \
 	arch-arm/bionic/__get_sp.S \
@@ -391,7 +390,6 @@ libc_common_src_files += \
 	arch-arm/bionic/strcpy.S \
 	arch-arm/bionic/strcmp.S \
 	arch-arm/bionic/syscall.S \
-	string/memmove.c.arm \
 	string/bcopy.c \
 	string/strncmp.c \
 	unistd/socketcalls.c
@@ -456,31 +454,8 @@ endif # x86
 
 ifeq ($(TARGET_ARCH),mips)
 libc_common_src_files += \
-	arch-mips/bionic/__get_sp.S \
-	arch-mips/bionic/__get_tls.c \
-	arch-mips/bionic/__set_tls.c \
-	arch-mips/bionic/_exit_with_stack_teardown.S \
-	arch-mips/bionic/_setjmp.S \
-	arch-mips/bionic/futex_mips.S \
-	arch-mips/bionic/bzero.S \
-	arch-mips/bionic/cacheflush.c \
-	arch-mips/bionic/clone.S \
-	arch-mips/bionic/ffs.S \
-	arch-mips/bionic/memcmp16.S \
-	arch-mips/bionic/memmove.c \
-	arch-mips/bionic/pipe.S \
-	arch-mips/bionic/setjmp.S \
-	arch-mips/bionic/sigsetjmp.S \
-	arch-mips/bionic/vfork.S
-
-libc_common_src_files += \
-	arch-mips/string/memset.S \
-	arch-mips/string/memcpy.S \
-	arch-mips/string/mips_strlen.c
-
-libc_common_src_files += \
+	bionic/memcmp.c \
 	string/bcopy.c \
-	string/memcmp.c \
 	string/strcmp.c \
 	string/strcpy.c \
 	string/strncmp.c
@@ -492,12 +467,10 @@ libc_common_src_files += \
 	bionic/ptrace.c
 
 libc_static_common_src_files += \
-	bionic/pthread.c
+    bionic/pthread.c \
+    bionic/pthread_create.cpp \
+    bionic/pthread_key.cpp \
 
-libc_arch_static_src_files := \
-	bionic/dl_iterate_phdr_static.c
-
-libc_arch_dynamic_src_files :=
 endif # mips
 
 # Define some common cflags
