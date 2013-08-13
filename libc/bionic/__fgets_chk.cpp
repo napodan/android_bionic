@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,20 +25,32 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
 #include <stdio.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
+#include <stdlib.h>
+#include "libc_logging.h"
 
-/* not thread-safe */
-char*  ptsname( int fd )
+/*
+ * __fgets_chk. Called in place of fgets() when we know the
+ * size of the buffer we're writing into.
+ *
+ * See
+ *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+ * for details.
+ *
+ * This fgets check is called if _FORTIFY_SOURCE is defined and
+ * greater than 0.
+ */
+extern "C" char *__fgets_chk(char *dest, int supplied_size,
+                  FILE *stream, size_t dest_len_from_compiler)
 {
-    unsigned int  pty_num;
-    static char   buff[64];
+    if (supplied_size < 0) {
+        __fortify_chk_fail("fgets buffer size less than 0", 0);
+    }
 
-    if ( ioctl( fd, TIOCGPTN, &pty_num ) != 0 )
-        return NULL;
+    if (((size_t) supplied_size) > dest_len_from_compiler) {
+        __fortify_chk_fail("fgets buffer overflow", 0);
+    }
 
-    snprintf( buff, sizeof(buff), "/dev/pts/%u", pty_num );
-    return buff;
+    return fgets(dest, supplied_size, stream);
 }
