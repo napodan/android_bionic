@@ -13,9 +13,8 @@
  * ====================================================
  */
 
-#ifndef lint
-static char rcsid[] = "$FreeBSD: src/lib/msun/src/e_scalbf.c,v 1.10 2005/12/06 20:12:38 obrien Exp $";
-#endif
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
 
 #include "math.h"
 #include "math_private.h"
@@ -42,5 +41,3 @@ __ieee754_scalbf(float x, float fn)
 	return scalbnf(x,(int)fn);
 #endif
 }
-
-__weak_reference(scalbf, ldexpf);
