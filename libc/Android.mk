@@ -112,11 +112,6 @@ libc_common_src_files := \
 	string/strtok.c \
 	wchar/wcswidth.c \
 	wchar/wcsxfrm.c \
-	inet/inet_addr.c \
-	inet/inet_aton.c \
-	inet/inet_ntoa.c \
-	inet/inet_ntop.c \
-	inet/inet_pton.c \
 	tzcode/asctime.c \
 	tzcode/difftime.c \
 	tzcode/localtime.c \
@@ -205,7 +200,6 @@ libc_common_src_files := \
 	bionic/statfs.c \
 	bionic/strndup.c \
 	bionic/strnlen.c \
-	bionic/sha1.c \
 	bionic/stubs.c \
 	bionic/strntoimax.c \
 	bionic/strntoumax.c \
@@ -278,6 +272,7 @@ libc_bionic_src_files := \
     bionic/strsignal.cpp \
     bionic/sysconf.cpp \
     bionic/tmpfile.cpp \
+    bionic/__umask_chk.cpp \
     bionic/__vsnprintf_chk.cpp \
     bionic/__vsprintf_chk.cpp \
     bionic/wait.cpp \
@@ -313,6 +308,8 @@ libc_upstream_freebsd_src_files := \
     upstream-freebsd/lib/libc/string/wmemset.c \
 
 libc_upstream_netbsd_src_files := \
+    upstream-netbsd/common/lib/libc/hash/sha1/sha1.c \
+    upstream-netbsd/common/lib/libc/inet/inet_addr.c \
     upstream-netbsd/libc/compat-43/creat.c \
     upstream-netbsd/libc/gen/ftw.c \
     upstream-netbsd/libc/gen/nftw.c \
@@ -320,6 +317,9 @@ libc_upstream_netbsd_src_files := \
     upstream-netbsd/libc/gen/popen.c \
     upstream-netbsd/libc/gen/psignal.c \
     upstream-netbsd/libc/gen/setjmperr.c \
+    upstream-netbsd/libc/inet/inet_ntoa.c \
+    upstream-netbsd/libc/inet/inet_ntop.c \
+    upstream-netbsd/libc/inet/inet_pton.c \
     upstream-netbsd/libc/isc/ev_streams.c \
     upstream-netbsd/libc/isc/ev_timers.c \
     upstream-netbsd/libc/regex/regcomp.c \

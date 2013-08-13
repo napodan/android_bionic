@@ -156,7 +156,6 @@ libm_common_cflags :=
 ifeq ($(TARGET_ARCH),arm)
   libm_common_src_files += \
 	arm/fenv.c \
-	src/e_ldexpf.c \
 	src/s_scalbln.c \
 	src/s_scalbn.c \
 	src/s_scalbnf.c \
