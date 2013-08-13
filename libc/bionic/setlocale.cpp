@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2008 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,30 +26,10 @@
  * SUCH DAMAGE.
  */
 
-#include <string.h>
+#include <locale.h>
 #include <stdlib.h>
-#include <private/logd.h>
 
-/*
- * __strlcpy_chk. Called in place of strlcpy() when we know the
- * size of the buffer we're writing into.
- *
- * See
- *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
- *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
- * for details.
- *
- * This strlcpy check is called if _FORTIFY_SOURCE is defined and
- * greater than 0.
- */
-size_t __strlcpy_chk(char *dest, const char *src,
-              size_t supplied_size, size_t dest_len_from_compiler)
-{
-    if (supplied_size > dest_len_from_compiler) {
-        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
-            "*** strlcpy buffer overflow detected ***\n");
-        abort();
-    }
-
-    return strlcpy(dest, src, supplied_size);
+// setlocale(3) always fails on bionic.
+char* setlocale(int /*category*/, char const* /*locale*/) {
+    return NULL;
 }
