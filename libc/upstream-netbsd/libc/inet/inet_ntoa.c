@@ -1,11 +1,9 @@
-/*	$OpenBSD: inet_addr.c,v 1.9 2005/08/06 20:30:03 espie Exp $	*/
+/*	$NetBSD: inet_ntoa.c,v 1.2 2012/03/13 21:13:38 christos Exp $	*/
 
 /*
- * ++Copyright++ 1983, 1990, 1993
- * -
- * Copyright (c) 1983, 1990, 1993
- *    The Regents of the University of California.  All rights reserved.
- * 
+ * Copyright (c) 1983, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -17,7 +15,7 @@
  * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,44 +27,38 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * -
- * Portions Copyright (c) 1993 by Digital Equipment Corporation.
- * 
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies, and that
- * the name of Digital Equipment Corporation not be used in advertising or
- * publicity pertaining to distribution of the document or software without
- * specific, written prior permission.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
- * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
- * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
- * SOFTWARE.
- * -
- * --Copyright--
  */
 
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char sccsid[] = "@(#)inet_ntoa.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: inet_ntoa.c,v 1.2 2012/03/13 21:13:38 christos Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
+
+#include "namespace.h"
 #include <sys/types.h>
-#include <sys/param.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <ctype.h>
+#include <stdio.h>
+#include <string.h>
+
+#ifdef __weak_alias
+__weak_alias(inet_ntoa,_inet_ntoa)
+#endif
 
 /*
- * Ascii internet address interpretation routine.
- * The value returned is in network order.
+ * Convert network-format internet address
+ * to base 256 d.d.d.d representation.
  */
-in_addr_t
-inet_addr(const char *cp)
-{
-	struct in_addr val;
+/*const*/ char *
+inet_ntoa(struct in_addr in) {
+	static char ret[18];
 
-	if (inet_aton(cp, &val))
-		return (val.s_addr);
-	return (INADDR_NONE);
+	strlcpy(ret, "[inet_ntoa error]", sizeof(ret));
+	(void) inet_ntop(AF_INET, &in, ret, (socklen_t)sizeof ret);
+	return ret;
 }
