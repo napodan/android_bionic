@@ -1,5 +1,4 @@
-/*	$OpenBSD: strcasestr.c,v 1.3 2006/03/31 05:34:55 deraadt Exp $	*/
-/*	$NetBSD: strcasestr.c,v 1.2 2005/02/09 21:35:47 kleink Exp $	*/
+/*	$NetBSD: strcoll.c,v 1.10 2012/06/25 22:32:46 abs Exp $	*/
 
 /*-
  * Copyright (c) 1990, 1993
@@ -33,28 +32,28 @@
  * SUCH DAMAGE.
  */
 
-#include <ctype.h>
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char sccsid[] = "@(#)strcoll.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: strcoll.c,v 1.10 2012/06/25 22:32:46 abs Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
+
+#include <assert.h>
 #include <string.h>
 
 /*
- * Find the first occurrence of find in s, ignore case.
+ * Compare strings according to LC_COLLATE category of current locale.
  */
-char *
-strcasestr(const char *s, const char *find)
+int
+strcoll(const char *s1, const char *s2)
 {
-	char c, sc;
-	size_t len;
 
-	if ((c = *find++) != 0) {
-		c = (char)tolower((unsigned char)c);
-		len = strlen(find);
-		do {
-			do {
-				if ((sc = *s++) == 0)
-					return (NULL);
-			} while ((char)tolower((unsigned char)sc) != c);
-		} while (strncasecmp(s, find, len) != 0);
-		s--;
-	}
-	return ((char *)s);
+	_DIAGASSERT(s1 != NULL);
+	_DIAGASSERT(s2 != NULL);
+
+	/* LC_COLLATE is unimplemented, hence always "C" */
+	return (strcmp(s1, s2));
 }

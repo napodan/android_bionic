@@ -1,7 +1,11 @@
-/*	$OpenBSD: index.c,v 1.5 2005/08/08 08:05:37 espie Exp $ */
+/*	$NetBSD: strcasestr.c,v 1.3 2005/11/29 03:12:00 christos Exp $	*/
+
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,24 +32,38 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+__RCSID("$NetBSD: strcasestr.c,v 1.3 2005/11/29 03:12:00 christos Exp $");
+#endif /* LIBC_SCCS and not lint */
+
+#include "namespace.h"
+#include <assert.h>
+#include <ctype.h>
 #include <string.h>
-#include "libc_logging.h"
 
+/*
+ * Find the first occurrence of find in s, ignore case.
+ */
 char *
-__strchr_chk(const char *p, int ch, size_t s_len)
+strcasestr(const char *s, const char *find)
 {
-	for (;; ++p, s_len--) {
-		if (s_len == 0)
-			__fortify_chk_fail("strchr read beyond buffer", 0);
-		if (*p == (char) ch)
-			return((char *)p);
-		if (!*p)
-			return((char *)NULL);
-	}
-	/* NOTREACHED */
-}
+	char c, sc;
+	size_t len;
 
-char *
-strchr(const char *p, int ch) {
-    return __strchr_chk(p, ch, __BIONIC_FORTIFY_UNKNOWN_SIZE);
+	_DIAGASSERT(s != NULL);
+	_DIAGASSERT(find != NULL);
+
+	if ((c = *find++) != 0) {
+		c = tolower((unsigned char)c);
+		len = strlen(find);
+		do {
+			do {
+				if ((sc = *s++) == 0)
+					return (NULL);
+			} while ((char)tolower((unsigned char)sc) != c);
+		} while (strncasecmp(s, find, len) != 0);
+		s--;
+	}
+	return __UNCONST(s);
 }
