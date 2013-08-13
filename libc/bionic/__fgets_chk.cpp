@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,29 +25,32 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <sys/wait.h>
-#include <stddef.h>
 
-extern pid_t  __wait4 (pid_t pid, int *status, int options, struct rusage *rusage);
-extern int    __waitid(idtype_t which, id_t id, siginfo_t *info, int options, struct rusage *ru);
+#include <stdio.h>
+#include <stdlib.h>
+#include "libc_logging.h"
 
-pid_t  wait( int*  status )
+/*
+ * __fgets_chk. Called in place of fgets() when we know the
+ * size of the buffer we're writing into.
+ *
+ * See
+ *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+ * for details.
+ *
+ * This fgets check is called if _FORTIFY_SOURCE is defined and
+ * greater than 0.
+ */
+extern "C" char *__fgets_chk(char *dest, int supplied_size,
+                  FILE *stream, size_t dest_len_from_compiler)
 {
-    return wait4( (pid_t)-1, status, 0, NULL );
-}
+    if (supplied_size < 0) {
+        __fortify_chk_fail("fgets buffer size less than 0", 0);
+    }
 
-pid_t  wait3(int*  status, int options, struct rusage*  rusage)
-{
-    return wait4( (pid_t)-1, status, options, rusage );
-}
+    if (((size_t) supplied_size) > dest_len_from_compiler) {
+        __fortify_chk_fail("fgets buffer overflow", 0);
+    }
 
-pid_t  waitpid(pid_t  pid, int*  status, int  options)
-{
-    return wait4( pid, status, options, NULL );
-}
-
-int  waitid(idtype_t which, id_t id, siginfo_t *info, int options)
-{
-    /* the system call takes an option struct rusage that we don't need */
-    return __waitid(which, id, info, options, NULL);
+    return fgets(dest, supplied_size, stream);
 }

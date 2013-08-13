@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,36 +25,21 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <unistd.h>
-#include <errno.h>
 
+#ifndef _PRIVATE_SSP_H
+#define _PRIVATE_SSP_H
 
-#define  SBRK_ALIGN  32
+#include <stdint.h>
+#include <sys/cdefs.h>
 
-/* shared with brk() implementation */
-char*   __bionic_brk;
+__BEGIN_DECLS
 
-void *sbrk(ptrdiff_t increment)
-{
-    char*  start;
-    char*  end;
-    char*  new_brk;
-  
-    if ( !__bionic_brk)
-        __bionic_brk = __brk((void*)0);
+/* GCC uses this on ARM and MIPS; we use it on x86 to set the guard in TLS. */
+extern uintptr_t __stack_chk_guard;
 
-    start = (char*)(((long)__bionic_brk + SBRK_ALIGN-1) & ~(SBRK_ALIGN-1));
-  end   = start + increment;
+/* GCC calls this if a stack guard check fails. */
+extern void __stack_chk_fail();
 
-  new_brk = __brk(end);
-    if (new_brk == (void*)-1)
-        return new_brk;
-    else if (new_brk < end)
-    {
-    errno = ENOMEM;
-        return (void*)-1;
-  }
+__END_DECLS
 
-    __bionic_brk = new_brk;
-  return start;
-}
+#endif

@@ -173,10 +173,8 @@ libc_common_src_files := \
 	bionic/err.c \
 	bionic/ether_aton.c \
 	bionic/ether_ntoa.c \
-	bionic/eventfd.c \
 	bionic/fcntl.c \
 	bionic/fdprintf.c \
-	bionic/__fgets_chk.c \
 	bionic/flockfile.c \
 	bionic/fork.c \
 	bionic/fstatfs.c \
@@ -213,7 +211,6 @@ libc_common_src_files := \
 	bionic/mmap.c \
 	bionic/openat.c \
 	bionic/open.c \
-	bionic/opendir.c \
 	bionic/pathconf.c \
 	bionic/perror.c \
 	bionic/pread.c \
@@ -246,11 +243,8 @@ libc_common_src_files := \
 	bionic/signame.c \
 	bionic/sigsetmask.c \
 	bionic/sigsuspend.c \
-	bionic/sigwait.c \
-	bionic/sleep.c \
 	bionic/__snprintf_chk.c \
 	bionic/__sprintf_chk.c \
-	bionic/statfs.c \
 	bionic/__strcat_chk.c \
 	bionic/strcoll.c \
 	bionic/__strcpy_chk.c \
@@ -259,8 +253,11 @@ libc_common_src_files := \
 	bionic/__strlen_chk.c \
 	bionic/__strncat_chk.c \
 	bionic/__strncpy_chk.c \
+	bionic/sleep.c \
+	bionic/statfs.c \
 	bionic/strndup.c \
 	bionic/strnlen.c \
+	bionic/sha1.c \
 	bionic/strntoimax.c \
 	bionic/strntoumax.c \
 	bionic/strtotimeval.c \
@@ -275,9 +272,10 @@ libc_common_src_files := \
 	bionic/unlockpt.c \
 	bionic/usleep.c \
 	bionic/utime.c \
+	bionic/umount.c \
+	bionic/unlockpt.c \
+	bionic/usleep.c \
 	bionic/utmp.c \
-	bionic/__vsnprintf_chk.c \
-	bionic/__vsprintf_chk.c \
 	bionic/wchar.c \
 	bionic/wcscoll.c \
 	netbsd/gethnamaddr.c \
@@ -313,16 +311,21 @@ libc_bionic_src_files := \
     bionic/assert.cpp \
     bionic/brk.cpp \
     bionic/dirent.cpp \
+    bionic/__fgets_chk.cpp \
     bionic/getauxval.cpp \
     bionic/getcwd.cpp \
     bionic/libc_logging.cpp \
     bionic/sbrk.cpp \
     bionic/scandir.cpp \
+    bionic/sigwait.cpp \
     bionic/strerror.cpp \
     bionic/strerror_r.cpp \
     bionic/strsignal.cpp \
     bionic/stubs.cpp \
+    bionic/sysconf.cpp \
     bionic/tmpfile.cpp \
+    bionic/__vsnprintf_chk.cpp \
+    bionic/__vsprintf_chk.cpp \
     bionic/wait.cpp \
 
 libc_upstream_freebsd_src_files := \
@@ -379,6 +382,7 @@ libc_static_common_src_files := \
 # =========================================================
 ifeq ($(TARGET_ARCH),arm)
 libc_common_src_files += \
+	bionic/memmove.c.arm \
 	arch-arm/bionic/abort_arm.S \
 	arch-arm/bionic/atomics_arm.c \
 	arch-arm/bionic/clone.S \
@@ -402,7 +406,6 @@ libc_common_src_files += \
 	arch-arm/bionic/syscall.S \
 	arch-arm/bionic/tgkill.S \
 	arch-arm/bionic/tkill.S \
-	bionic/memmove.c.arm \
 	bionic/socketcalls.c \
 	string/bcopy.c \
 	string/strncmp.c \
@@ -467,29 +470,6 @@ endif # x86
 
 ifeq ($(TARGET_ARCH),mips)
 libc_common_src_files += \
-	arch-mips/bionic/__get_sp.S \
-	arch-mips/bionic/__get_tls.c \
-	arch-mips/bionic/__set_tls.c \
-	arch-mips/bionic/_exit_with_stack_teardown.S \
-	arch-mips/bionic/_setjmp.S \
-	arch-mips/bionic/futex_mips.S \
-	arch-mips/bionic/bzero.S \
-	arch-mips/bionic/cacheflush.c \
-	arch-mips/bionic/clone.S \
-	arch-mips/bionic/ffs.S \
-	arch-mips/bionic/memcmp16.S \
-	arch-mips/bionic/memmove.c \
-	arch-mips/bionic/pipe.S \
-	arch-mips/bionic/setjmp.S \
-	arch-mips/bionic/sigsetjmp.S \
-	arch-mips/bionic/vfork.S
-
-libc_common_src_files += \
-	arch-mips/string/memset.S \
-	arch-mips/string/memcpy.S \
-	arch-mips/string/mips_strlen.c
-
-libc_common_src_files += \
 	bionic/memcmp.c \
 	string/bcopy.c \
 	string/strcmp.c \
@@ -503,12 +483,10 @@ libc_common_src_files += \
 	bionic/ptrace.c
 
 libc_static_common_src_files += \
-	bionic/pthread.c
+    bionic/pthread.c \
+    bionic/pthread_create.cpp \
+    bionic/pthread_key.cpp \
 
-libc_arch_static_src_files := \
-	bionic/dl_iterate_phdr_static.c
-
-libc_arch_dynamic_src_files :=
 endif # mips
 
 # Define some common cflags

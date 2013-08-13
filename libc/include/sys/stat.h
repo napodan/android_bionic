@@ -112,6 +112,13 @@ struct stat {
 #define  st_mtimensec  st_mtime_nsec
 #define  st_ctimensec  st_ctime_nsec
 
+#ifdef __USE_BSD
+/* Permission macros provided by glibc for compatibility with BSDs. */
+#define ACCESSPERMS (S_IRWXU | S_IRWXG | S_IRWXO) /* 0777 */
+#define ALLPERMS    (S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO) /* 07777 */
+#define DEFFILEMODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) /* 0666 */
+#endif
+
 extern int    chmod(const char *, mode_t);
 extern int    fchmod(int, mode_t);
 extern int    mkdir(const char *, mode_t);
@@ -122,7 +129,7 @@ extern int    lstat(const char *, struct stat *);
 extern int    mknod(const char *, mode_t, dev_t);
 extern mode_t umask(mode_t);
 
-#if defined(__BIONIC_FORTIFY_INLINE)
+#if defined(__BIONIC_FORTIFY)
 
 extern mode_t __umask_chk(mode_t);
 extern mode_t __umask_real(mode_t)
@@ -140,7 +147,7 @@ mode_t umask(mode_t mode) {
   }
   return __umask_chk(mode);
 }
-#endif /* defined(__BIONIC_FORTIFY_INLINE) */
+#endif /* defined(__BIONIC_FORTIFY) */
 
 
 #define  stat64    stat
