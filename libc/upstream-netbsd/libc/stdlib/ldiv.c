@@ -1,7 +1,11 @@
-/*	$OpenBSD: assert.c,v 1.8 2005/08/08 08:05:33 espie Exp $ */
-/*-
- * Copyright (c) 1992, 1993
+/*	$NetBSD: ldiv.c,v 1.8 2012/06/25 22:32:45 abs Exp $	*/
+
+/*
+ * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,27 +32,29 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/types.h>
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <private/logd.h>
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char sccsid[] = "@(#)ldiv.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: ldiv.c,v 1.8 2012/06/25 22:32:45 abs Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
 
-// We log to stderr for the benefit of "adb shell" users, and the log for the benefit
-// of regular app developers who want to see their asserts.
+#include <stdlib.h>		/* ldiv_t */
 
-void __assert(const char* file, int line, const char* failed_expression) {
-  const char* fmt = "%s:%d: assertion \"%s\" failed\n";
-  __libc_android_log_print(ANDROID_LOG_FATAL, "libc", fmt, file, line, failed_expression);
-  fprintf(stderr, fmt, file, line, failed_expression);
-  abort();
-  /* NOTREACHED */
-}
+ldiv_t
+ldiv(long num, long denom)
+{
+	ldiv_t r;
 
-void __assert2(const char* file, int line, const char* function, const char* failed_expression) {
-  const char* fmt = "%s:%d: %s: assertion \"%s\" failed\n";
-  __libc_android_log_print(ANDROID_LOG_FATAL, "libc", fmt, file, line, function, failed_expression);
-  fprintf(stderr, fmt, file, line, function, failed_expression);
-  abort();
-  /* NOTREACHED */
+	/* see div.c for comments */
+
+	r.quot = num / denom;
+	r.rem = num % denom;
+	if (num >= 0 && r.rem < 0) {
+		r.quot++;
+		r.rem -= denom;
+	}
+	return (r);
 }

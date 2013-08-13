@@ -79,7 +79,7 @@
 #define	___STRING(x)	__STRING(x)
 #define	___CONCAT(x,y)	__CONCAT(x,y)
 
-#if __STDC__ || defined(__cplusplus)
+#if defined(__STDC__) || defined(__cplusplus)
 #define	__P(protos)	protos		/* full-blown ANSI C */
 #define	__CONCAT(x,y)	x ## y
 #define	__STRING(x)	#x
@@ -177,6 +177,8 @@
 #define	__unused	/* delete */
 #endif
 
+#define __pure2 __attribute__((__const__)) /* Android-added: used by FreeBSD libm */
+
 #if __GNUC_PREREQ__(3, 1)
 #define	__used		__attribute__((__used__))
 #else
@@ -213,7 +215,7 @@
  * C99 defines the restrict type qualifier keyword, which was made available
  * in GCC 2.92.
  */
-#if __STDC_VERSION__ >= 199901L
+#if defined(__STDC__VERSION__) && __STDC_VERSION__ >= 199901L
 #define	__restrict	restrict
 #else
 #if !__GNUC_PREREQ__(2, 92)
@@ -225,7 +227,7 @@
  * C99 defines __func__ predefined identifier, which was made available
  * in GCC 2.95.
  */
-#if !(__STDC_VERSION__ >= 199901L)
+#if !defined(__STDC_VERSION__) || !(__STDC_VERSION__ >= 199901L)
 #if __GNUC_PREREQ__(2, 6)
 #define	__func__	__PRETTY_FUNCTION__
 #elif __GNUC_PREREQ__(2, 4)
@@ -306,9 +308,23 @@
 #if __GNUC_PREREQ__(2, 96)
 #define __noreturn    __attribute__((__noreturn__))
 #define __mallocfunc  __attribute__((malloc))
+#define __purefunc    __attribute__((pure))
 #else
 #define __noreturn
 #define __mallocfunc
+#define __purefunc
+#endif
+
+#if __GNUC_PREREQ__(3, 1)
+#define __always_inline __attribute__((__always_inline__))
+#else
+#define __always_inline
+#endif
+
+#if __GNUC_PREREQ__(3, 4)
+#define __wur __attribute__((__warn_unused_result__))
+#else
+#define __wur
 #endif
 
 /*
@@ -361,11 +377,11 @@
 #define	__link_set_entry(set, idx)	(__link_set_begin(set)[idx])
 
 /*
- * Some of the recend FreeBSD sources used in Bionic need this.
+ * Some of the FreeBSD sources used in Bionic need this.
  * Originally, this is used to embed the rcs versions of each source file
  * in the generated binary. We certainly don't want this in Bionic.
  */
-#define	__FBSDID(s)	struct __hack
+#define __FBSDID(s) /* nothing */
 
 /*-
  * The following definitions are an extension of the behavior originally
@@ -497,5 +513,23 @@
 #endif
 
 #define  __BIONIC__   1
+#include <android/api-level.h>
+
+#if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0 && defined(__OPTIMIZE__) && __OPTIMIZE__ > 0 && !defined(__clang__)
+#define __BIONIC_FORTIFY 1
+#define __BIONIC_FORTIFY_INLINE \
+    extern inline \
+    __attribute__ ((always_inline)) \
+    __attribute__ ((gnu_inline)) \
+    __attribute__ ((artificial))
+#endif
+#define __BIONIC_FORTIFY_UNKNOWN_SIZE ((size_t) -1)
+
+/* Android-added: for FreeBSD's libm. */
+#define __weak_reference(sym,alias) \
+    __asm__(".weak " #alias); \
+    __asm__(".equ "  #alias ", " #sym)
+#define __strong_reference(sym,aliassym) \
+    extern __typeof (sym) aliassym __attribute__ ((__alias__ (#sym)))
 
 #endif /* !_SYS_CDEFS_H_ */

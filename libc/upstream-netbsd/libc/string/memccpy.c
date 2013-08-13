@@ -1,10 +1,8 @@
-/*	$OpenBSD: lldiv.c,v 1.1 2006/01/13 17:58:09 millert Exp $	*/
-/*
- * Copyright (c) 1990 Regents of the University of California.
- * All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Chris Torek.
+/*	$NetBSD: memccpy.c,v 1.13 2012/06/25 22:32:46 abs Exp $	*/
+
+/*-
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,20 +29,33 @@
  * SUCH DAMAGE.
  */
 
-#include <stdlib.h>		/* lldiv_t */
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char sccsid[] = "@(#)memccpy.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: memccpy.c,v 1.13 2012/06/25 22:32:46 abs Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
 
-lldiv_t
-lldiv(long long num, long long denom)
+#include <assert.h>
+#include <string.h>
+
+void *
+memccpy(void *t, const void *f, int c, size_t n)
 {
-	lldiv_t r;
 
-	/* see div.c for comments */
+	_DIAGASSERT(t != 0);
+	_DIAGASSERT(f != 0);
 
-	r.quot = num / denom;
-	r.rem = num % denom;
-	if (num >= 0 && r.rem < 0) {
-		r.quot++;
-		r.rem -= denom;
+	if (n) {
+		unsigned char *tp = t;
+		const unsigned char *fp = f;
+		unsigned char uc = c;
+		do {
+			if ((*tp++ = *fp++) == uc)
+				return (tp);
+		} while (--n != 0);
 	}
-	return (r);
+	return (0);
 }

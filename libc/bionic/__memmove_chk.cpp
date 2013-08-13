@@ -26,36 +26,28 @@
  * SUCH DAMAGE.
  */
 
-#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <private/logd.h>
+#include "libc_logging.h"
 
 /*
- * Runtime implementation of __builtin____vsprintf_chk.
+ * Runtime implementation of __builtin____memmove_chk.
  *
  * See
  *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
  *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
  * for details.
  *
- * This vsprintf check is called if _FORTIFY_SOURCE is defined and
+ * This memmove check is called if _FORTIFY_SOURCE is defined and
  * greater than 0.
  */
-int __vsprintf_chk(
-        char *dest,
-        int flags,
-        size_t dest_len_from_compiler,
-        const char *format,
-        va_list va)
+extern "C" void *__memmove_chk (void *dest, const void *src,
+              size_t len, size_t dest_len)
 {
-    int ret = vsnprintf(dest, dest_len_from_compiler, format, va);
-
-    if ((size_t) ret >= dest_len_from_compiler) {
-        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
-            "*** vsprintf buffer overflow detected ***\n");
-        abort();
+    if (len > dest_len) {
+        __fortify_chk_fail("memmove buffer overflow",
+                             BIONIC_EVENT_MEMMOVE_BUFFER_OVERFLOW);
     }
 
-    return ret;
+    return memmove(dest, src, len);
 }

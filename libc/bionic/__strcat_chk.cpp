@@ -28,29 +28,36 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <private/logd.h>
+#include "libc_logging.h"
+#include <safe_iop.h>
 
 /*
- * Runtime implementation of __builtin____strcpy_chk.
+ * Runtime implementation of __builtin____strcat_chk.
  *
  * See
  *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
  *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
  * for details.
  *
- * This strcpy check is called if _FORTIFY_SOURCE is defined and
+ * This strcat check is called if _FORTIFY_SOURCE is defined and
  * greater than 0.
  */
-char *__strcpy_chk (char *dest, const char *src, size_t dest_len)
-{
-    // TODO: optimize so we don't scan src twice.
-    size_t src_len = strlen(src) + 1;
-    if (src_len > dest_len) {
-        __libc_android_log_print(ANDROID_LOG_FATAL, "libc",
-            "*** strcpy buffer overflow detected ***\n");
-        __libc_android_log_event_uid(BIONIC_EVENT_STRCPY_BUFFER_OVERFLOW);
-        abort();
+extern "C" char *__strcat_chk (char *dest, const char *src, size_t dest_buf_size) {
+    // TODO: optimize so we don't scan src/dest twice.
+    size_t src_len  = strlen(src);
+    size_t dest_len = strlen(dest);
+    size_t sum;
+
+    // sum = src_len + dest_len + 1 (with overflow protection)
+    if (!safe_add3(&sum, src_len, dest_len, 1U)) {
+        __fortify_chk_fail("strcat integer overflow",
+                             BIONIC_EVENT_STRCAT_INTEGER_OVERFLOW);
     }
 
-    return strcpy(dest, src);
+    if (sum > dest_buf_size) {
+        __fortify_chk_fail("strcat buffer overflow",
+                             BIONIC_EVENT_STRCAT_BUFFER_OVERFLOW);
+    }
+
+    return strcat(dest, src);
 }
