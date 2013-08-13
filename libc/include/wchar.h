@@ -31,15 +31,10 @@
 #include <sys/cdefs.h>
 #include <stdio.h>
 
-/* wchar_t is required in stdlib.h according to POSIX */
-#define __need___wchar_t
-#include <stddef.h>
-
 #include <stdarg.h>
+#include <stddef.h>
 #include <time.h>
 #include <malloc.h>
-
-#include <stddef.h>
 
 /* IMPORTANT: Any code that relies on wide character support is essentially
  *            non-portable and/or broken. the only reason this header exist
@@ -50,7 +45,7 @@
 
 __BEGIN_DECLS
 
-typedef int                     wint_t;
+typedef __WINT_TYPE__           wint_t;
 typedef struct { int  dummy; }  mbstate_t;
 
 typedef enum {
@@ -112,6 +107,7 @@ extern int               vfwprintf(FILE *, const wchar_t *, va_list);
 extern int               vwprintf(const wchar_t *, va_list);
 extern int               vswprintf(wchar_t *, size_t, const wchar_t *, va_list);
 extern size_t            wcrtomb(char *, wchar_t, mbstate_t *);
+extern int               wcscasecmp(const wchar_t *, const wchar_t *);
 extern wchar_t          *wcscat(wchar_t *, const wchar_t *);
 extern wchar_t          *wcschr(const wchar_t *, wchar_t);
 extern int               wcscmp(const wchar_t *, const wchar_t *);
@@ -120,6 +116,7 @@ extern wchar_t          *wcscpy(wchar_t *, const wchar_t *);
 extern size_t            wcscspn(const wchar_t *, const wchar_t *);
 extern size_t            wcsftime(wchar_t *, size_t, const wchar_t *, const struct tm *);
 extern size_t            wcslen(const wchar_t *);
+extern int               wcsncasecmp(const wchar_t *, const wchar_t *, size_t);
 extern wchar_t          *wcsncat(wchar_t *, const wchar_t *, size_t);
 extern int               wcsncmp(const wchar_t *, const wchar_t *, size_t);
 extern wchar_t          *wcsncpy(wchar_t *, const wchar_t *, size_t);
@@ -151,6 +148,11 @@ extern int               wscanf(const wchar_t *, ...);
 typedef void *wctrans_t;
 extern wint_t		 towctrans(wint_t, wctrans_t);
 extern wctrans_t	 wctrans (const char *);
+
+#if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
+wchar_t* wcsdup(const wchar_t*);
+size_t wcsnlen(const wchar_t*, size_t);
+#endif
 
 __END_DECLS
 
