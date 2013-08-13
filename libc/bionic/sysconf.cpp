@@ -33,11 +33,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <stdbool.h>
 #include <stdio.h>  // For FOPEN_MAX.
 #include <string.h>
 #include <sys/sysconf.h>
+#include <time.h>
 #include <unistd.h>
+
+#include "private/ScopedReaddir.h"
 
 /* seems to be the default on Linux, per the GLibc sources and my own digging */
 
@@ -55,7 +57,6 @@
 
 /* the following depends on our implementation */
 #define  SYSTEM_ATEXIT_MAX          65536    /* our implementation is unlimited */
-#define  SYSTEM_THREAD_KEYS_MAX     BIONIC_TLS_SLOTS
 #define  SYSTEM_THREAD_STACK_MIN    32768    /* lower values may be possible, but be conservative */
 #define  SYSTEM_THREAD_THREADS_MAX  2048     /* really unlimited */
 
@@ -76,27 +77,25 @@ static bool __matches_cpuN(const char* s) {
   return (sscanf(s, "cpu%u%c", &cpu, &dummy) == 1);
 }
 
-static int __get_nproc_conf(void) {
+static int __sysconf_nprocessors_conf() {
   // On x86 kernels you can use /proc/cpuinfo for this, but on ARM kernels offline CPUs disappear
   // from there. This method works on both.
-  DIR* d = opendir("/sys/devices/system/cpu");
-  if (!d) {
+  ScopedReaddir reader("/sys/devices/system/cpu");
+  if (reader.IsBad()) {
     return 1;
   }
 
   int result = 0;
-  struct dirent de;
-  struct dirent* e;
-  while (!readdir_r(d, &de, &e) && e != NULL) {
-    if (e->d_type == DT_DIR && __matches_cpuN(e->d_name)) {
+  dirent* entry;
+  while ((entry = reader.ReadEntry()) != NULL) {
+    if (entry->d_type == DT_DIR && __matches_cpuN(entry->d_name)) {
       ++result;
     }
   }
-  closedir(d);
   return result;
 }
 
-static int __get_nproc_onln(void) {
+static int __sysconf_nprocessors_onln() {
   FILE* fp = fopen("/proc/stat", "r");
   if (fp == NULL) {
     return 1;
@@ -138,12 +137,18 @@ static int __get_meminfo(const char* pattern) {
   return result;
 }
 
-static int __get_phys_pages(void) {
+static int __sysconf_phys_pages() {
   return __get_meminfo("MemTotal: %ld kB");
 }
 
-static int __get_avphys_pages(void) {
+static int __sysconf_avphys_pages() {
   return __get_meminfo("MemFree: %ld kB");
+}
+
+static int __sysconf_monotonic_clock() {
+  timespec t;
+  int rc = clock_getres(CLOCK_MONOTONIC, &t);
+  return (rc == -1) ? -1 : _POSIX_VERSION;
 }
 
 int sysconf(int name) {
@@ -297,10 +302,13 @@ int sysconf(int name) {
     // GETPW_R_SIZE_MAX ?
 
     case _SC_LOGIN_NAME_MAX:    return SYSTEM_LOGIN_NAME_MAX;
-#ifdef _POSIX_THREAD_DESTRUCTOR_ITERATIONS
-    case _SC_THREAD_DESTRUCTOR_ITERATIONS:  return _POSIX_THREAD_DESTRUCTOR_ITERATIONS;
-#endif
-    case _SC_THREAD_KEYS_MAX:     return SYSTEM_THREAD_KEYS_MAX;
+
+    case _SC_THREAD_DESTRUCTOR_ITERATIONS:
+      return _POSIX_THREAD_DESTRUCTOR_ITERATIONS;
+
+    case _SC_THREAD_KEYS_MAX:
+      return (BIONIC_TLS_SLOTS - TLS_SLOT_FIRST_USER_SLOT - GLOBAL_INIT_THREAD_LOCAL_BUFFER_COUNT);
+
     case _SC_THREAD_STACK_MIN:    return SYSTEM_THREAD_STACK_MIN;
     case _SC_THREAD_THREADS_MAX:  return SYSTEM_THREAD_THREADS_MAX;
     case _SC_TTY_NAME_MAX:        return SYSTEM_TTY_NAME_MAX;
@@ -326,11 +334,11 @@ int sysconf(int name) {
     case _SC_THREAD_SAFE_FUNCTIONS:  return _POSIX_THREAD_SAFE_FUNCTIONS
 #endif
 
-
-    case _SC_NPROCESSORS_CONF:  return __get_nproc_conf();
-    case _SC_NPROCESSORS_ONLN:  return __get_nproc_onln();
-    case _SC_PHYS_PAGES:        return __get_phys_pages();
-    case _SC_AVPHYS_PAGES:      return __get_avphys_pages();
+    case _SC_MONOTONIC_CLOCK:   return __sysconf_monotonic_clock();
+    case _SC_NPROCESSORS_CONF:  return __sysconf_nprocessors_conf();
+    case _SC_NPROCESSORS_ONLN:  return __sysconf_nprocessors_onln();
+    case _SC_PHYS_PAGES:        return __sysconf_phys_pages();
+    case _SC_AVPHYS_PAGES:      return __sysconf_avphys_pages();
 
     default:
        /* Posix says EINVAL is the only error that shall be returned,
