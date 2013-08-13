@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,23 +25,39 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <stddef.h>
+
 #include <string.h>
+#include <stdlib.h>
+#include "libc_logging.h"
+#include <safe_iop.h>
 
-void *memccpy(void *dst, const void *src, int c, size_t n)
-{
-    char*        q     = dst;
-    const char*  p     = src;
-    const char*  p_end = p + n;
-    char         ch    = ~(char)c;  /* ensure ch != c */
+/*
+ * Runtime implementation of __builtin____strcat_chk.
+ *
+ * See
+ *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+ *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
+ * for details.
+ *
+ * This strcat check is called if _FORTIFY_SOURCE is defined and
+ * greater than 0.
+ */
+extern "C" char *__strcat_chk (char *dest, const char *src, size_t dest_buf_size) {
+    // TODO: optimize so we don't scan src/dest twice.
+    size_t src_len  = strlen(src);
+    size_t dest_len = strlen(dest);
+    size_t sum;
 
-    for (;;) {
-        if (ch == c || p >= p_end) break;
-        *q++ = ch = *p++;
+    // sum = src_len + dest_len + 1 (with overflow protection)
+    if (!safe_add3(&sum, src_len, dest_len, 1U)) {
+        __fortify_chk_fail("strcat integer overflow",
+                             BIONIC_EVENT_STRCAT_INTEGER_OVERFLOW);
     }
 
-    if (p >= p_end && ch != c)
-        return NULL;
+    if (sum > dest_buf_size) {
+        __fortify_chk_fail("strcat buffer overflow",
+                             BIONIC_EVENT_STRCAT_BUFFER_OVERFLOW);
+    }
 
-    return q;
+    return strcat(dest, src);
 }

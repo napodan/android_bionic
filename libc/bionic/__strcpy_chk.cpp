@@ -26,33 +26,28 @@
  * SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
+#include "libc_logging.h"
 
 /*
- * Runtime implementation of __builtin____sprintf_chk.
+ * Runtime implementation of __builtin____strcpy_chk.
  *
  * See
  *   http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
  *   http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
  * for details.
  *
- * This sprintf check is called if _FORTIFY_SOURCE is defined and
+ * This strcpy check is called if _FORTIFY_SOURCE is defined and
  * greater than 0.
  */
-int __sprintf_chk(
-        char *dest,
-        int flags,
-        size_t dest_len_from_compiler,
-        const char *format, ...)
-{
-    va_list va;
-    int retval;
+extern "C" char *__strcpy_chk (char *dest, const char *src, size_t dest_len) {
+    // TODO: optimize so we don't scan src twice.
+    size_t src_len = strlen(src) + 1;
+    if (src_len > dest_len) {
+        __fortify_chk_fail("strcpy buffer overflow",
+                             BIONIC_EVENT_STRCPY_BUFFER_OVERFLOW);
+    }
 
-    va_start(va, format);
-    retval = __vsprintf_chk(dest, flags,
-                             dest_len_from_compiler, format, va);
-    va_end(va);
-
-    return retval;
+    return strcpy(dest, src);
 }
