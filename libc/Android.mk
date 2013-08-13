@@ -110,35 +110,8 @@ libc_common_src_files := \
 	string/strspn.c \
 	string/strstr.c \
 	string/strtok.c \
-	wchar/wcpcpy.c \
-	wchar/wcpncpy.c \
-	wchar/wcscasecmp.c \
-	wchar/wcscat.c \
-	wchar/wcschr.c \
-	wchar/wcscmp.c \
-	wchar/wcscpy.c \
-	wchar/wcscspn.c \
-	wchar/wcsdup.c \
-	wchar/wcslcat.c \
-	wchar/wcslcpy.c \
-	wchar/wcslen.c \
-	wchar/wcsncasecmp.c \
-	wchar/wcsncat.c \
-	wchar/wcsncmp.c \
-	wchar/wcsncpy.c \
-	wchar/wcsnlen.c \
-	wchar/wcspbrk.c \
-	wchar/wcsrchr.c \
-	wchar/wcsspn.c \
-	wchar/wcsstr.c \
-	wchar/wcstok.c \
 	wchar/wcswidth.c \
 	wchar/wcsxfrm.c \
-	wchar/wmemchr.c \
-	wchar/wmemcmp.c \
-	wchar/wmemcpy.c \
-	wchar/wmemmove.c \
-	wchar/wmemset.c \
 	inet/inet_addr.c \
 	inet/inet_aton.c \
 	inet/inet_ntoa.c \
@@ -311,7 +284,33 @@ libc_bionic_src_files := \
     bionic/wchar.cpp \
 
 libc_upstream_freebsd_src_files := \
-
+    upstream-freebsd/lib/libc/string/wcpcpy.c \
+    upstream-freebsd/lib/libc/string/wcpncpy.c \
+    upstream-freebsd/lib/libc/string/wcscasecmp.c \
+    upstream-freebsd/lib/libc/string/wcscat.c \
+    upstream-freebsd/lib/libc/string/wcschr.c \
+    upstream-freebsd/lib/libc/string/wcscmp.c \
+    upstream-freebsd/lib/libc/string/wcscpy.c \
+    upstream-freebsd/lib/libc/string/wcscspn.c \
+    upstream-freebsd/lib/libc/string/wcsdup.c \
+    upstream-freebsd/lib/libc/string/wcslcat.c \
+    upstream-freebsd/lib/libc/string/wcslcpy.c \
+    upstream-freebsd/lib/libc/string/wcslen.c \
+    upstream-freebsd/lib/libc/string/wcsncasecmp.c \
+    upstream-freebsd/lib/libc/string/wcsncat.c \
+    upstream-freebsd/lib/libc/string/wcsncmp.c \
+    upstream-freebsd/lib/libc/string/wcsncpy.c \
+    upstream-freebsd/lib/libc/string/wcsnlen.c \
+    upstream-freebsd/lib/libc/string/wcspbrk.c \
+    upstream-freebsd/lib/libc/string/wcsrchr.c \
+    upstream-freebsd/lib/libc/string/wcsspn.c \
+    upstream-freebsd/lib/libc/string/wcsstr.c \
+    upstream-freebsd/lib/libc/string/wcstok.c \
+    upstream-freebsd/lib/libc/string/wmemchr.c \
+    upstream-freebsd/lib/libc/string/wmemcmp.c \
+    upstream-freebsd/lib/libc/string/wmemcpy.c \
+    upstream-freebsd/lib/libc/string/wmemmove.c \
+    upstream-freebsd/lib/libc/string/wmemset.c \
 
 libc_upstream_netbsd_src_files := \
     upstream-netbsd/libc/compat-43/creat.c \
@@ -668,6 +667,29 @@ include $(BUILD_STATIC_LIBRARY)
 
 
 # ========================================================
+# libc_freebsd.a - upstream FreeBSD C library code
+# ========================================================
+#
+# These files are built with the freebsd-compat.h header file
+# automatically included.
+
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES := $(libc_upstream_freebsd_src_files)
+LOCAL_CFLAGS := \
+    $(libc_common_cflags) \
+    -I$(LOCAL_PATH)/upstream-freebsd \
+    -I$(LOCAL_PATH)/upstream-freebsd/libc/include \
+    -include upstream-freebsd/freebsd-compat.h
+LOCAL_C_INCLUDES := $(libc_common_c_includes)
+LOCAL_MODULE := libc_freebsd
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_SYSTEM_SHARED_LIBRARIES :=
+
+include $(BUILD_STATIC_LIBRARY)
+
+
+# ========================================================
 # libc_netbsd.a - upstream NetBSD C library code
 # ========================================================
 #
@@ -680,6 +702,7 @@ LOCAL_SRC_FILES := $(libc_upstream_netbsd_src_files)
 LOCAL_CFLAGS := \
     $(libc_common_cflags) \
     -I$(LOCAL_PATH)/upstream-netbsd \
+    -I$(LOCAL_PATH)/upstream-netbsd/libc/include \
     -include upstream-netbsd/netbsd-compat.h
 LOCAL_C_INCLUDES := $(libc_common_c_includes)
 LOCAL_MODULE := libc_netbsd
@@ -718,8 +741,11 @@ LOCAL_CFLAGS := $(libc_common_cflags) \
 LOCAL_C_INCLUDES := $(libc_common_c_includes)
 LOCAL_MODULE := libc_common
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
-LOCAL_WHOLE_STATIC_LIBRARIES := libbionic_ssp libc_bionic libc_netbsd
+LOCAL_WHOLE_STATIC_LIBRARIES := libbionic_ssp libc_bionic libc_freebsd libc_netbsd
 LOCAL_SYSTEM_SHARED_LIBRARIES :=
+
+# TODO: split out the asflags.
+LOCAL_ASFLAGS := $(LOCAL_CFLAGS)
 
 include $(BUILD_STATIC_LIBRARY)
 
