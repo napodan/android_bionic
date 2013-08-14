@@ -150,10 +150,6 @@ libc_common_src_files := \
 	bionic/issetugid.c \
 	bionic/ldexp.c \
 	bionic/lseek64.c \
-	bionic/libc_init_common.c \
-	bionic/locale.c \
-	bionic/logd_write.c \
-	bionic/lseek64.c \
 	bionic/md5.c \
 	bionic/memccpy.c \
 	bionic/memchr.c \
@@ -206,17 +202,8 @@ libc_common_src_files := \
 	bionic/system_properties.c \
 	bionic/tcgetpgrp.c \
 	bionic/tcsetpgrp.c \
-	bionic/tdestroy.c \
 	bionic/thread_atexit.c \
 	bionic/time64.c \
-<<<<<<< HEAD
-	bionic/__umask_chk.c \
-	bionic/umount.c \
-	bionic/unlockpt.c \
-	bionic/usleep.c \
-	bionic/utime.c \
-=======
->>>>>>> Update some files to 4.3_r2.1
 	bionic/umount.c \
 	bionic/unlockpt.c \
 	bionic/usleep.c \
@@ -256,9 +243,12 @@ libc_bionic_src_files := \
     bionic/brk.cpp \
     bionic/dirent.cpp \
     bionic/__errno.c \
+    bionic/eventfd_read.cpp \
+    bionic/eventfd_write.cpp \
     bionic/__fgets_chk.cpp \
     bionic/getauxval.cpp \
     bionic/getcwd.cpp \
+    bionic/libc_init_common.c \
     bionic/libc_logging.cpp \
     bionic/libgen.cpp \
     bionic/__memcpy_chk.cpp \
@@ -269,6 +259,7 @@ libc_bionic_src_files := \
     bionic/scandir.cpp \
     bionic/__set_errno.cpp \
     bionic/setlocale.cpp \
+    bionic/signalfd.cpp \
     bionic/sigwait.cpp \
     bionic/__strcat_chk.cpp \
     bionic/__strcpy_chk.cpp \
@@ -282,6 +273,7 @@ libc_bionic_src_files := \
     bionic/strsignal.cpp \
     bionic/stubs.cpp \
     bionic/sysconf.cpp \
+    bionic/tdestroy.cpp \
     bionic/tmpfile.cpp \
     bionic/__umask_chk.cpp \
     bionic/__vsnprintf_chk.cpp \
@@ -694,8 +686,8 @@ WITH_MALLOC_CHECK_LIBC_A := $(strip $(WITH_MALLOC_CHECK_LIBC_A))
 
 include $(CLEAR_VARS)
 
-LOCAL_SRC_FILES := bionic/ssp.c
-LOCAL_CFLAGS := $(libc_common_cflags) -fno-stack-protector
+LOCAL_SRC_FILES := bionic/__stack_chk_fail.cpp
+LOCAL_CFLAGS := $(libc_common_cflags) -fno-stack-protector -Werror
 LOCAL_C_INCLUDES := $(libc_common_c_includes)
 LOCAL_MODULE := libbionic_ssp
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
@@ -793,10 +785,10 @@ include $(BUILD_STATIC_LIBRARY)
 # ========================================================
 #
 # This is a version of the static C library that does not
-# include malloc. It's useful in situations when calling
-# the user wants to provide their own malloc implementation,
-# or wants to explicitly disallow the use of the use of malloc,
-# like the dynamic loader.
+# include malloc. It's useful in situations when the user wants
+# to provide their own malloc implementation, or wants to
+# explicitly disallow the use of the use of malloc,
+# such as in the dynamic loader.
 
 include $(CLEAR_VARS)
 
