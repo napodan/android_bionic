@@ -239,18 +239,8 @@ void* memalign(size_t alignment, size_t bytes) {
 #ifndef LIBC_STATIC
 #include <sys/system_properties.h>
 #include <dlfcn.h>
-#include "logd.h"
-
-// =============================================================================
-// log functions
-// =============================================================================
-
-#define debug_log(format, ...)  \
-   __libc_android_log_print(ANDROID_LOG_DEBUG, "libc", (format), ##__VA_ARGS__ )
-#define error_log(format, ...)  \
-   __libc_android_log_print(ANDROID_LOG_ERROR, "libc", (format), ##__VA_ARGS__ )
-#define info_log(format, ...)  \
-   __libc_android_log_print(ANDROID_LOG_INFO, "libc", (format), ##__VA_ARGS__ )
+#include <stdio.h>
+#include "libc_logging.h"
 
 /* Table for dispatching malloc calls, depending on environment. */
 static MallocDebug gMallocUse __attribute__((aligned(32))) = {
@@ -395,7 +385,7 @@ static void malloc_init_impl(void)
     // Initialize malloc dispatch table with appropriate routines.
     switch (debug_level) {
         case 1:
-            __libc_android_log_print(ANDROID_LOG_INFO, "libc",
+            __libc_format_log(ANDROID_LOG_INFO, "libc",
                     "%s using MALLOC_DEBUG = %d (leak checker)\n",
                     __progname, debug_level);
             gMallocUse.malloc =
@@ -410,7 +400,7 @@ static void malloc_init_impl(void)
                 dlsym(libc_malloc_impl_handle, "leak_memalign");
             break;
         case 5:
-            __libc_android_log_print(ANDROID_LOG_INFO, "libc",
+            __libc_format_log(ANDROID_LOG_INFO, "libc",
                     "%s using MALLOC_DEBUG = %d (fill)\n",
                     __progname, debug_level);
             gMallocUse.malloc =
@@ -424,7 +414,7 @@ static void malloc_init_impl(void)
                 dlsym(libc_malloc_impl_handle, "fill_memalign");
             break;
         case 10:
-            __libc_android_log_print(ANDROID_LOG_INFO, "libc",
+            __libc_format_log(ANDROID_LOG_INFO, "libc",
                     "%s using MALLOC_DEBUG = %d (sentinels, fill)\n",
                     __progname, debug_level);
             gMallocUse.malloc =
@@ -439,7 +429,7 @@ static void malloc_init_impl(void)
                 dlsym(libc_malloc_impl_handle, "chk_memalign");
             break;
         case 20:
-            __libc_android_log_print(ANDROID_LOG_INFO, "libc",
+            __libc_format_log(ANDROID_LOG_INFO, "libc",
                 "%s[%u] using MALLOC_DEBUG = %d (instrumented for emulator)\n",
                 __progname, getpid(), debug_level);
             gMallocUse.malloc =
