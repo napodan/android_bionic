@@ -125,10 +125,8 @@ libc_common_src_files := \
 	bionic/basename_r.c \
 	bionic/bindresvport.c \
 	bionic/bionic_clone.c \
-	bionic/brk.c \
 	bionic/clearenv.c \
 	bionic/cpuacct.c \
-	bionic/daemon.c \
 	bionic/dirname.c \
 	bionic/dirname_r.c \
 	bionic/daemon.c \
@@ -181,7 +179,6 @@ libc_common_src_files := \
 	bionic/ptsname_r.c \
 	bionic/pututline.c \
 	bionic/pwrite.c \
-	bionic/realpath.c \
 	bionic/reboot.c \
 	bionic/recv.c \
 	bionic/sched_cpualloc.c \
@@ -191,7 +188,6 @@ libc_common_src_files := \
 	bionic/semaphore.c \
 	bionic/send.c \
 	bionic/setegid.c \
-	bionic/__set_errno.c \
 	bionic/seteuid.c \
 	bionic/setpgrp.c \
 	bionic/setresuid.c \
@@ -260,6 +256,7 @@ libc_bionic_src_files := \
     bionic/assert.cpp \
     bionic/brk.cpp \
     bionic/dirent.cpp \
+    bionic/__errno.c \
     bionic/__fgets_chk.cpp \
     bionic/getauxval.cpp \
     bionic/getcwd.cpp \
@@ -270,6 +267,7 @@ libc_bionic_src_files := \
     bionic/raise.c \
     bionic/sbrk.cpp \
     bionic/scandir.cpp \
+    bionic/__set_errno.cpp \
     bionic/setlocale.cpp \
     bionic/sigwait.cpp \
     bionic/__strcat_chk.cpp \
@@ -292,6 +290,7 @@ libc_bionic_src_files := \
     bionic/wchar.cpp \
 
 libc_upstream_freebsd_src_files := \
+    upstream-freebsd/lib/libc/stdlib/realpath.c \
     upstream-freebsd/lib/libc/string/wcpcpy.c \
     upstream-freebsd/lib/libc/string/wcpncpy.c \
     upstream-freebsd/lib/libc/string/wcscasecmp.c \
@@ -363,23 +362,6 @@ libc_upstream_netbsd_src_files := \
     upstream-netbsd/libc/string/strxfrm.c \
     upstream-netbsd/libc/unistd/killpg.c \
 
-# The following files are common, but must be compiled
-# with different C flags when building a static C library.
-#
-# The reason for this is the implementation of __get_tls()
-# that will differ between the shared and static versions
-# of the library.
-#
-# See comments in private/bionic_tls.h for more details.
-#
-# NOTE: bionic/pthread.c is added later to this list
-#       because it needs special handling on ARM, see
-#       below.
-#
-libc_static_common_src_files := \
-        bionic/__errno.c \
-        bionic/sysconf.c \
-
 # Architecture specific source files go here
 # =========================================================
 ifeq ($(TARGET_ARCH),arm)
@@ -422,7 +404,7 @@ libc_common_src_files += \
 	bionic/ptrace.c.arm
 
 libc_static_common_src_files += \
-        bionic/pthread.c.arm \
+    bionic/pthread.c.arm \
 
 # these are used by the static and dynamic versions of the libc
 # respectively
@@ -435,39 +417,17 @@ endif # arm
 
 ifeq ($(TARGET_ARCH),x86)
 libc_common_src_files += \
-	arch-x86/bionic/__get_sp.S \
-	arch-x86/bionic/__get_tls.c \
-	arch-x86/bionic/__set_tls.c \
-	arch-x86/bionic/clone.S \
-	arch-x86/bionic/_exit_with_stack_teardown.S \
-	arch-x86/bionic/futex_x86.S \
-	arch-x86/bionic/setjmp.S \
-	arch-x86/bionic/_setjmp.S \
-	arch-x86/bionic/sigsetjmp.S \
-	arch-x86/bionic/vfork.S \
-	arch-x86/bionic/syscall.S \
-	arch-x86/string/bcopy_wrapper.S \
-	arch-x86/string/memcpy_wrapper.S \
-	arch-x86/string/memmove_wrapper.S \
-	arch-x86/string/bzero_wrapper.S \
-	arch-x86/string/memcmp_wrapper.S \
-	arch-x86/string/memset_wrapper.S \
-	arch-x86/string/strcmp_wrapper.S \
-	arch-x86/string/strncmp_wrapper.S \
-	arch-x86/string/strlen_wrapper.S \
-	string/strcpy.c \
-	bionic/pthread-atfork.c \
-	bionic/pthread-rwlocks.c \
-	bionic/pthread-timers.c \
-	bionic/ptrace.c
+    bionic/pthread-atfork.c \
+    bionic/pthread-rwlocks.c \
+    bionic/pthread-timers.c \
+    bionic/ptrace.c \
+    string/strcpy.c \
 
 libc_static_common_src_files += \
-        bionic/pthread.c \
+    bionic/pthread.c \
+    bionic/pthread_create.cpp \
+    bionic/pthread_key.cpp \
 
-libc_arch_static_src_files := \
-	bionic/dl_iterate_phdr_static.c
-
-libc_arch_dynamic_src_files :=
 endif # x86
 
 ifeq ($(TARGET_ARCH),mips)
