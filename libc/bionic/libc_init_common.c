@@ -42,10 +42,16 @@
 extern unsigned __get_sp(void);
 extern pid_t    gettid(void);
 
+// Not public, but well-known in the BSDs.
 char*  __progname;
-char **environ;
 
-/* from asm/page.h */
+// Declared in <unistd.h>.
+char** environ;
+
+// Declared in <private/bionic_ssp.h>.
+uintptr_t __stack_chk_guard = 0;
+
+// Declared in <asm/page.h>.
 unsigned int __page_size = PAGE_SIZE;
 unsigned int __page_shift = PAGE_SHIFT;
 
