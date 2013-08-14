@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2008 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,34 +26,45 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _BIONIC_THREAD_LOCAL_BUFFER_H_included
-#define _BIONIC_THREAD_LOCAL_BUFFER_H_included
+#include <asm/unistd.h>
+#include <machine/asm.h>
 
-#include <malloc.h>
-#include <pthread.h>
+#define FUTEX_WAIT 0
+#define FUTEX_WAKE 1
 
-// libstdc++ currently contains __cxa_guard_acquire and __cxa_guard_release,
-// so we make do with macros instead of a C++ class.
-// TODO: move __cxa_guard_acquire and __cxa_guard_release into libc.
+// __futex_syscall3(*ftx, op, val)
+ENTRY(__futex_syscall3)
+    mov     ip, r7
+    ldr     r7, =__NR_futex
+    swi     #0
+    mov     r7, ip
+    bx      lr
+END(__futex_syscall3)
 
-#define GLOBAL_INIT_THREAD_LOCAL_BUFFER(name) \
-  static pthread_once_t name ## _once; \
-  static pthread_key_t name ## _key; \
-  static void name ## _key_destroy(void* buffer) { \
-    free(buffer); \
-  } \
-  static void name ## _key_init() { \
-    pthread_key_create(&name ## _key, name ## _key_destroy); \
-  }
+// __futex_syscall4(*ftx, op, val, *timespec)
+ENTRY(__futex_syscall4)
+    b __futex_syscall3
+END(__futex_syscall4)
 
-// Leaves "name_buffer" and "name_byte_count" defined and initialized.
-#define LOCAL_INIT_THREAD_LOCAL_BUFFER(type, name, byte_count) \
-  pthread_once(&name ## _once, name ## _key_init); \
-  type name ## _buffer = reinterpret_cast<type>(pthread_getspecific(name ## _key)); \
-  if (name ## _buffer == NULL) { \
-    name ## _buffer = reinterpret_cast<type>(malloc(byte_count)); \
-    pthread_setspecific(name ## _key, name ## _buffer); \
-  } \
-  const size_t name ## _buffer_size = byte_count
+// __futex_wait(*ftx, val, *timespec)
+ENTRY(__futex_wait)
+    mov     ip, r7
+    mov     r3, r2
+    mov     r2, r1
+    mov     r1, #FUTEX_WAIT
+    ldr     r7, =__NR_futex
+    swi     #0
+    mov     r7, ip
+    bx      lr
+END(__futex_wait)
 
-#endif // _BIONIC_THREAD_LOCAL_BUFFER_H_included
+// __futex_wake(*ftx, counter)
+ENTRY(__futex_wake)
+    mov     ip, r7
+    mov     r2, r1
+    mov     r1, #FUTEX_WAKE
+    ldr     r7, =__NR_futex
+    swi     #0
+    mov     r7, ip
+    bx      lr
+END(__futex_wake)
