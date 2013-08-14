@@ -123,12 +123,8 @@ libc_common_src_files := \
 	bionic/atoll.c \
 	bionic/bindresvport.c \
 	bionic/bionic_clone.c \
-	bionic/basename.c \
-	bionic/basename_r.c \
 	bionic/clearenv.c \
 	bionic/cpuacct.c \
-	bionic/dirname.c \
-	bionic/dirname_r.c \
 	bionic/daemon.c \
 	bionic/err.c \
 	bionic/ether_aton.c \
@@ -174,7 +170,6 @@ libc_common_src_files := \
 	bionic/pwrite.c \
 	bionic/reboot.c \
 	bionic/recv.c \
-	bionic/realpath.c \
 	bionic/sched_getaffinity.c \
 	bionic/sched_getcpu.c \
 	bionic/sched_cpualloc.c \
@@ -198,7 +193,6 @@ libc_common_src_files := \
 	bionic/statfs.c \
 	bionic/strndup.c \
 	bionic/strnlen.c \
-	bionic/stubs.c \
 	bionic/strntoimax.c \
 	bionic/strntoumax.c \
 	bionic/strtotimeval.c \
@@ -207,7 +201,6 @@ libc_common_src_files := \
 	bionic/tcsetpgrp.c \
 	bionic/thread_atexit.c \
 	bionic/time64.c \
-	bionic/utime.c \
 	bionic/umount.c \
 	bionic/unlockpt.c \
 	bionic/usleep.c \
@@ -251,6 +244,7 @@ libc_bionic_src_files := \
     bionic/getauxval.cpp \
     bionic/getcwd.cpp \
     bionic/libc_logging.cpp \
+    bionic/libgen.cpp \
     bionic/__memcpy_chk.cpp \
     bionic/__memmove_chk.cpp \
     bionic/__memset_chk.cpp \
@@ -270,6 +264,7 @@ libc_bionic_src_files := \
     bionic/__strncat_chk.cpp \
     bionic/__strncpy_chk.cpp \
     bionic/strsignal.cpp \
+    bionic/stubs.cpp \
     bionic/sysconf.cpp \
     bionic/tmpfile.cpp \
     bionic/__umask_chk.cpp \
@@ -279,6 +274,7 @@ libc_bionic_src_files := \
     bionic/wchar.cpp \
 
 libc_upstream_freebsd_src_files := \
+    upstream-freebsd/lib/libc/stdlib/realpath.c \
     upstream-freebsd/lib/libc/string/wcpcpy.c \
     upstream-freebsd/lib/libc/string/wcpncpy.c \
     upstream-freebsd/lib/libc/string/wcscasecmp.c \
@@ -317,6 +313,7 @@ libc_upstream_netbsd_src_files := \
     upstream-netbsd/libc/gen/popen.c \
     upstream-netbsd/libc/gen/psignal.c \
     upstream-netbsd/libc/gen/setjmperr.c \
+    upstream-netbsd/libc/gen/utime.c \
     upstream-netbsd/libc/inet/inet_ntoa.c \
     upstream-netbsd/libc/inet/inet_ntop.c \
     upstream-netbsd/libc/inet/inet_pton.c \
