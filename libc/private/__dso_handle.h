@@ -26,21 +26,9 @@
  * SUCH DAMAGE.
  */
 
-#include <string.h>
-#include "ThreadLocalBuffer.h"
 
-extern "C" const char* __strerror_lookup(int);
-
-GLOBAL_INIT_THREAD_LOCAL_BUFFER(strerror);
-
-char* strerror(int error_number) {
-  // Just return the original constant in the easy cases.
-  char* result = const_cast<char*>(__strerror_lookup(error_number));
-  if (result != NULL) {
-    return result;
-  }
-
-  LOCAL_INIT_THREAD_LOCAL_BUFFER(char*, strerror, NL_TEXTMAX);
-  strerror_r(error_number, strerror_tls_buffer, strerror_tls_buffer_size);
-  return strerror_tls_buffer;
-}
+#ifndef CRT_LEGACY_WORKAROUND
+__attribute__ ((visibility ("hidden")))
+#endif
+__attribute__ ((section (".bss")))
+void *__dso_handle = (void *) 0;
