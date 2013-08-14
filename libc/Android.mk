@@ -121,14 +121,10 @@ libc_common_src_files := \
 	bionic/atoi.c \
 	bionic/atol.c \
 	bionic/atoll.c \
-	bionic/basename.c \
-	bionic/basename_r.c \
 	bionic/bindresvport.c \
 	bionic/bionic_clone.c \
 	bionic/clearenv.c \
 	bionic/cpuacct.c \
-	bionic/dirname.c \
-	bionic/dirname_r.c \
 	bionic/daemon.c \
 	bionic/err.c \
 	bionic/ether_aton.c \
@@ -213,11 +209,14 @@ libc_common_src_files := \
 	bionic/tdestroy.c \
 	bionic/thread_atexit.c \
 	bionic/time64.c \
+<<<<<<< HEAD
 	bionic/__umask_chk.c \
 	bionic/umount.c \
 	bionic/unlockpt.c \
 	bionic/usleep.c \
 	bionic/utime.c \
+=======
+>>>>>>> Update some files to 4.3_r2.1
 	bionic/umount.c \
 	bionic/unlockpt.c \
 	bionic/usleep.c \
@@ -261,6 +260,7 @@ libc_bionic_src_files := \
     bionic/getauxval.cpp \
     bionic/getcwd.cpp \
     bionic/libc_logging.cpp \
+    bionic/libgen.cpp \
     bionic/__memcpy_chk.cpp \
     bionic/__memmove_chk.cpp \
     bionic/__memset_chk.cpp \
@@ -329,6 +329,7 @@ libc_upstream_netbsd_src_files := \
     upstream-netbsd/libc/gen/popen.c \
     upstream-netbsd/libc/gen/psignal.c \
     upstream-netbsd/libc/gen/setjmperr.c \
+    upstream-netbsd/libc/gen/utime.c \
     upstream-netbsd/libc/inet/inet_ntoa.c \
     upstream-netbsd/libc/inet/inet_ntop.c \
     upstream-netbsd/libc/inet/inet_pton.c \
