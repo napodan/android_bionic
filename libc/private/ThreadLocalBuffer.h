@@ -36,24 +36,26 @@
 // so we make do with macros instead of a C++ class.
 // TODO: move __cxa_guard_acquire and __cxa_guard_release into libc.
 
+// We used to use pthread_once to initialize the keys, but life is more predictable
+// if we allocate them all up front when the C library starts up, via __constructor__.
+
 #define GLOBAL_INIT_THREAD_LOCAL_BUFFER(name) \
-  static pthread_once_t name ## _once; \
-  static pthread_key_t name ## _key; \
-  static void name ## _key_destroy(void* buffer) { \
+  static pthread_key_t __bionic_tls_ ## name ## _key; \
+  static void __bionic_tls_ ## name ## _key_destroy(void* buffer) { \
     free(buffer); \
   } \
-  static void name ## _key_init() { \
-    pthread_key_create(&name ## _key, name ## _key_destroy); \
+  __attribute__((constructor)) static void __bionic_tls_ ## name ## _key_init() { \
+    pthread_key_create(&__bionic_tls_ ## name ## _key, __bionic_tls_ ## name ## _key_destroy); \
   }
 
-// Leaves "name_buffer" and "name_byte_count" defined and initialized.
+// Leaves "name_tls_buffer" and "name_tls_buffer_size" defined and initialized.
 #define LOCAL_INIT_THREAD_LOCAL_BUFFER(type, name, byte_count) \
-  pthread_once(&name ## _once, name ## _key_init); \
-  type name ## _buffer = reinterpret_cast<type>(pthread_getspecific(name ## _key)); \
-  if (name ## _buffer == NULL) { \
-    name ## _buffer = reinterpret_cast<type>(malloc(byte_count)); \
-    pthread_setspecific(name ## _key, name ## _buffer); \
+  type name ## _tls_buffer = \
+      reinterpret_cast<type>(pthread_getspecific(__bionic_tls_ ## name ## _key)); \
+  if (name ## _tls_buffer == NULL) { \
+    name ## _tls_buffer = reinterpret_cast<type>(calloc(1, byte_count)); \
+    pthread_setspecific(__bionic_tls_ ## name ## _key, name ## _tls_buffer); \
   } \
-  const size_t name ## _buffer_size = byte_count
+  const size_t name ## _tls_buffer_size __attribute__((unused)) = byte_count
 
 #endif // _BIONIC_THREAD_LOCAL_BUFFER_H_included
