@@ -28,28 +28,11 @@
 
 #include <errno.h>
 
+// This function is called from our assembler syscall stubs.
+// C/C++ code should just assign 'errno' instead.
 
-int __set_errno(int n)
-{
-    errno = n;
-    return -1;
-}
-
-/*
- * this function is called from syscall stubs,
- * (tail-called in the case of 0-4 arg versions)
- */
-
-int __set_syscall_errno(int n)
-{
-        /* some syscalls, mmap() for example, have valid return
-        ** values that are "negative".  Since errno values are not
-        ** greater than 131 on Linux, we will just consider 
-        ** anything significantly out of range as not-an-error
-        */
-    if(n > -256) {
-        return __set_errno(-n);
-    } else {
-        return n;
-    }
+// TODO: this should be __LIBC_HIDDEN__ but was exposed in <errno.h> in the NDK.
+extern "C" int __set_errno(int n) {
+  errno = n;
+  return -1;
 }
