@@ -355,29 +355,6 @@ libc_upstream_netbsd_src_files := \
 ifeq ($(TARGET_ARCH),arm)
 libc_common_src_files += \
 	bionic/memmove.c.arm \
-	arch-arm/bionic/__get_pc.S \
-	arch-arm/bionic/__get_sp.S \
-	arch-arm/bionic/_exit_with_stack_teardown.S \
-	arch-arm/bionic/_setjmp.S \
-	arch-arm/bionic/abort_arm.S \
-	arch-arm/bionic/atomics_arm.S \
-	arch-arm/bionic/clone.S \
-	arch-arm/bionic/eabi.c \
-	arch-arm/bionic/ffs.S \
-	arch-arm/bionic/kill.S \
-	arch-arm/bionic/libgcc_compat.c \
-	arch-arm/bionic/tkill.S \
-	arch-arm/bionic/tgkill.S \
-	arch-arm/bionic/memcmp.S \
-	arch-arm/bionic/memcmp16.S \
-	arch-arm/bionic/memcpy.S \
-	arch-arm/bionic/memset.S \
-	arch-arm/bionic/setjmp.S \
-	arch-arm/bionic/sigsetjmp.S \
-	arch-arm/bionic/strlen.c.arm \
-	arch-arm/bionic/strcpy.S \
-	arch-arm/bionic/strcmp.S \
-	arch-arm/bionic/syscall.S \
 	string/bcopy.c \
 	string/strncmp.c \
 
@@ -393,13 +370,6 @@ libc_common_src_files += \
 libc_static_common_src_files += \
     bionic/pthread.c.arm \
 
-# these are used by the static and dynamic versions of the libc
-# respectively
-libc_arch_static_src_files := \
-	arch-arm/bionic/exidx_static.c
-
-libc_arch_dynamic_src_files := \
-	arch-arm/bionic/exidx_dynamic.c
 endif # arm
 
 ifeq ($(TARGET_ARCH),x86)
@@ -437,6 +407,40 @@ libc_static_common_src_files += \
     bionic/pthread_key.cpp \
 
 endif # mips
+
+ifeq ($(strip $(TARGET_CPU_VARIANT)),)
+$(warning TARGET_CPU_VARIANT is not defined)
+endif
+
+###########################################################
+## Add cpu specific source files.
+##
+## This can be called multiple times, but it will only add
+## the first source file for each unique $(1).
+## $(1): Unique identifier to identify the cpu variant
+##       implementation.
+## $(2): Cpu specific source file.
+###########################################################
+
+define libc-add-cpu-variant-src
+$(if $(filter true,$(_LIBC_ARCH_CPU_VARIANT_HAS_$(1))), \
+	, \
+     $(eval _LIBC_ARCH_CPU_VARIANT_HAS_$(1) := true) \
+     $(eval _LIBC_ARCH_CPU_VARIANT_SRC_FILE.$(1) := $(2)) \
+     $(eval _LIBC_ARCH_CPU_VARIANT_SRC_FILES += $(2)) \
+)
+endef
+
+_LIBC_ARCH_COMMON_SRC_FILES :=
+_LIBC_ARCH_CPU_VARIANT_SRC_FILES :=
+_LIBC_ARCH_STATIC_SRC_FILES :=
+_LIBC_ARCH_DYNAMIC_SRC_FILES :=
+include bionic/libc/arch-$(TARGET_ARCH)/$(TARGET_ARCH).mk
+
+libc_common_src_files += $(_LIBC_ARCH_COMMON_SRC_FILES)
+libc_common_src_files += $(_LIBC_ARCH_CPU_VARIANT_SRC_FILES)
+libc_arch_static_src_files := $(_LIBC_ARCH_STATIC_SRC_FILES)
+libc_arch_dynamic_src_files := $(_LIBC_ARCH_DYNAMIC_SRC_FILES)
 
 # Define some common cflags
 # ========================================================
