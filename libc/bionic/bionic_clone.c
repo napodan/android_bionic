@@ -31,9 +31,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-/* WARNING: AT THE MOMENT, THIS IS ONLY SUPPORTED ON ARM
- */
-
 extern int  __bionic_clone(unsigned long   clone_flags,
                            void*           newsp,
                            int            *parent_tidptr,
@@ -61,9 +58,8 @@ clone(int (*fn)(void *), void *child_stack, int flags, void*  arg, ...)
     int     *parent_tidptr = NULL;
     void    *new_tls = NULL;
     int     *child_tidptr = NULL;
-    int     ret;
 
-    /* extract optional parameters - they are cummulative */
+    /* extract optional parameters - they are cumulative. */
     va_start(args, arg);
     if (flags & (CLONE_PARENT_SETTID|CLONE_SETTLS|CLONE_CHILD_SETTID)) {
         parent_tidptr = va_arg(args, int*);
@@ -76,6 +72,5 @@ clone(int (*fn)(void *), void *child_stack, int flags, void*  arg, ...)
     }
     va_end(args);
 
-    ret = __bionic_clone(flags, child_stack, parent_tidptr, new_tls, child_tidptr, fn, arg);
-    return ret;
+    return __bionic_clone(flags, child_stack, parent_tidptr, new_tls, child_tidptr, fn, arg);
 }
