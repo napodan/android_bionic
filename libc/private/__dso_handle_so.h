@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,10 +25,8 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-.global __get_pc
-.type __get_pc, %function
 
-__get_pc:
-	mov r0, pc
-	bx lr
 
+__attribute__ ((visibility ("hidden")))
+__attribute__ ((section (".data")))
+void *__dso_handle = &__dso_handle;
