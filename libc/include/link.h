@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,10 +25,31 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#ifndef _LINK_H_
+#define _LINK_H_
 
-#include <machine/asm.h>
+#include <sys/types.h>
+#include <elf.h>
 
-ENTRY(__get_sp)
-  mov r0, sp
-  bx lr
-END(__get_sp)
+__BEGIN_DECLS
+
+/* bionic is currently only 32-bit. */
+#define ElfW(type) Elf32_##type
+
+struct dl_phdr_info {
+  ElfW(Addr) dlpi_addr;
+  const char* dlpi_name;
+  const ElfW(Phdr)* dlpi_phdr;
+  ElfW(Half) dlpi_phnum;
+};
+
+#ifdef __arm__
+typedef long unsigned int* _Unwind_Ptr;
+_Unwind_Ptr dl_unwind_find_exidx(_Unwind_Ptr pc, int* pcount);
+#else
+int dl_iterate_phdr(int (*cb)(struct dl_phdr_info*, size_t, void*), void*);
+#endif
+
+__END_DECLS
+
+#endif /* _LINK_H_ */
