@@ -34,10 +34,11 @@
 
 // __futex_syscall3(*ftx, op, val)
 ENTRY(__futex_syscall3)
-    mov     ip, r7
+    stmdb   sp!, {r4, r7}
+    .save   {r4, r7}
     ldr     r7, =__NR_futex
     swi     #0
-    mov     r7, ip
+    ldmia   sp!, {r4, r7}
     bx      lr
 END(__futex_syscall3)
 
@@ -48,23 +49,25 @@ END(__futex_syscall4)
 
 // __futex_wait(*ftx, val, *timespec)
 ENTRY(__futex_wait)
-    mov     ip, r7
+    stmdb   sp!, {r4, r7}
+    .save   {r4, r7}
     mov     r3, r2
     mov     r2, r1
     mov     r1, #FUTEX_WAIT
     ldr     r7, =__NR_futex
     swi     #0
-    mov     r7, ip
+    ldmia   sp!, {r4, r7}
     bx      lr
 END(__futex_wait)
 
 // __futex_wake(*ftx, counter)
 ENTRY(__futex_wake)
-    mov     ip, r7
+    .save   {r4, r7}
+    stmdb   sp!, {r4, r7}
     mov     r2, r1
     mov     r1, #FUTEX_WAKE
     ldr     r7, =__NR_futex
     swi     #0
-    mov     r7, ip
+    ldmia   sp!, {r4, r7}
     bx      lr
 END(__futex_wake)
