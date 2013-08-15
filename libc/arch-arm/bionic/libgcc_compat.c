@@ -66,7 +66,12 @@
  * any native shared library generated with it should now be safe from that
  * problem. On the other hand, existing shared libraries distributed with
  * applications that were generated with a previous version of the NDK
- * still need all 1.5/1.6 helper functions in libc.so and libn.so
+ * still need all 1.5/1.6 helper functions in libc.so and libm.so
+ *
+ * After 3.2, the toolchain was updated again, adding __aeabi_f2uiz to the
+ * list of requirements. Technically, this is due to mis-linked NDK libraries
+ * but it is easier to add a single function here than asking several app
+ * developers to fix their build.
  *
  * After 3.2, the toolchain was updated again, adding __aeabi_f2uiz to the
  * list of requirements. Technically, this is due to mis-linked NDK libraries
@@ -110,9 +115,12 @@
     XX(__aeabi_fsub)         \
     XX(__aeabi_i2d)          \
     XX(__aeabi_i2f)          \
+    XX(__aeabi_idiv)         \
     XX(__aeabi_l2d)          \
     XX(__aeabi_l2f)          \
     XX(__aeabi_lmul)         \
+    XX(__aeabi_llsl)         \
+    XX(__aeabi_llsr)         \
     XX(__aeabi_ui2d)         \
     XX(__aeabi_ui2f)         \
     XX(__aeabi_ul2d)         \
