@@ -39,29 +39,10 @@
 #define	_STDIO_H_
 
 #include <sys/cdefs.h>
-#include <sys/_types.h>
+#include <sys/types.h>
 
 #include <stdarg.h>
 #include <stddef.h>
-
-#if __BSD_VISIBLE || __POSIX_VISIBLE || __XPG_VISIBLE
-#include <sys/types.h>	/* XXX should be removed */
-#endif
-
-#ifndef _SIZE_T_DEFINED_
-#define _SIZE_T_DEFINED_
-typedef unsigned int  size_t;
-#endif
-
-#ifndef _SSIZE_T_DEFINED_
-#define _SSIZE_T_DEFINED_
-typedef long int  ssize_t;
-#endif
-
-#ifndef	_OFF_T_DEFINED_
-#define	_OFF_T_DEFINED_
-typedef	long    off_t;
-#endif
 
 #define __need_NULL
 #include <stddef.h>
@@ -476,7 +457,9 @@ int vfdprintf(int, const char*, __va_list)
 __END_DECLS
 #endif /* _GNU_SOURCE */
 
-#if defined(__BIONIC_FORTIFY_INLINE)
+#if defined(__BIONIC_FORTIFY)
+
+__BEGIN_DECLS
 
 __BIONIC_FORTIFY_INLINE
 __attribute__((__format__ (printf, 3, 0)))
@@ -540,19 +523,21 @@ char *fgets(char *dest, int size, FILE *stream)
 
     // Compiler can prove, at compile time, that the passed in size
     // is always <= the actual object size. Don't call __fgets_chk
-    if (__builtin_constant_p(size) && (size <= bos)) {
+    if (__builtin_constant_p(size) && (size <= (int) bos)) {
         return __fgets_real(dest, size, stream);
     }
 
     // Compiler can prove, at compile time, that the passed in size
     // is always > the actual object size. Force a compiler error.
-    if (__builtin_constant_p(size) && (size > bos)) {
+    if (__builtin_constant_p(size) && (size > (int) bos)) {
         __fgets_too_big_error();
     }
 
     return __fgets_chk(dest, size, stream, bos);
 }
 
-#endif /* defined(__BIONIC_FORTIFY_INLINE) */
+__END_DECLS
+
+#endif /* defined(__BIONIC_FORTIFY) */
 
 #endif /* _STDIO_H_ */

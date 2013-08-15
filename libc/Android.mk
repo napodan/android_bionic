@@ -484,27 +484,6 @@ ifeq ($(TARGET_ARCH),arm)
   libc_common_cflags += -DSOFTFLOAT
   libc_common_cflags += -fstrict-aliasing
   libc_crt_target_cflags := -mthumb-interwork
-  #
-  # Define HAVE_ARM_TLS_REGISTER macro to indicate to the C library
-  # that it should access the hardware TLS register directly in
-  # private/bionic_tls.h
-  #
-  # The value must match your kernel configuration
-  #
-  ifeq ($(ARCH_ARM_HAVE_TLS_REGISTER),true)
-    libc_common_cflags += -DHAVE_ARM_TLS_REGISTER
-  endif
-  #
-  # Define HAVE_32_BYTE_CACHE_LINES to indicate to C
-  # library it should use to 32-byte version of memcpy, and not
-  # the 64-byte version.
-  #
-  ifeq ($(ARCH_ARM_HAVE_32_BYTE_CACHE_LINES),true)
-    libc_common_cflags += -DHAVE_32_BYTE_CACHE_LINE
-  endif
-  ifeq ($(ARCH_ARM_USE_NON_NEON_MEMCPY),true)
-    libc_common_cflags += -DARCH_ARM_USE_NON_NEON_MEMCPY
-  endif
 endif # !arm
 
 ifeq ($(TARGET_ARCH),x86)
@@ -802,7 +781,8 @@ LOCAL_SRC_FILES := \
 
 LOCAL_C_INCLUDES := $(libc_common_c_includes)
 LOCAL_CFLAGS := $(libc_common_cflags) \
-                -DLIBC_STATIC
+                -DLIBC_STATIC \
+                -std=gnu99
 
 LOCAL_MODULE := libc_nomalloc
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
@@ -825,7 +805,8 @@ LOCAL_SRC_FILES := \
 	bionic/libc_init_static.c
 
 LOCAL_CFLAGS := $(libc_common_cflags) \
-                -DLIBC_STATIC
+                -DLIBC_STATIC \
+                -std=gnu99
 LOCAL_C_INCLUDES := $(libc_common_c_includes)
 LOCAL_MODULE := libc
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
@@ -846,7 +827,7 @@ include $(CLEAR_VARS)
 # Since this code is experimental it is disabled by default.
 # see libc/bionic/pthread_debug.c for details
 
-LOCAL_CFLAGS := $(libc_common_cflags) -DPTHREAD_DEBUG -DPTHREAD_DEBUG_ENABLED=0
+LOCAL_CFLAGS := $(libc_common_cflags) -std=gnu99 -DPTHREAD_DEBUG -DPTHREAD_DEBUG_ENABLED=0
 LOCAL_C_INCLUDES := $(libc_common_c_includes)
 
 LOCAL_SRC_FILES := \
