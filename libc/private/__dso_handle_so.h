@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,9 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <machine/asm.h>
 
-ENTRY(__get_sp)
-  mov r0, sp
-  bx lr
-END(__get_sp)
+__attribute__ ((visibility ("hidden")))
+__attribute__ ((section (".data")))
+void *__dso_handle = &__dso_handle;
