@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (C) 2013 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,40 +26,15 @@
  * SUCH DAMAGE.
  */
 
-#include <elf.h>
-#include <sys/types.h>
-#include <link.h>
+#ifndef DEBUG_STACKTRACE_H
+#define DEBUG_STACKTRACE_H
 
-/* Dynamic binaries get this from the dynamic linker (system/linker), which
- * we don't pull in for static bins. We also don't have a list of so's to
- * iterate over, since there's really only a single monolithic blob of
- * code/data.
- *
- * All we need to do is to find where the executable is in memory, and grab the
- * phdr and phnum from there.
- */
+#include <stdint.h>
+#include <sys/cdefs.h>
 
-/* ld provides this to us in the default link script */
-extern void *__executable_start;
+__LIBC_HIDDEN__ void backtrace_startup();
+__LIBC_HIDDEN__ void backtrace_shutdown();
+__LIBC_HIDDEN__ int get_backtrace(uintptr_t* stack_frames, size_t max_depth);
+__LIBC_HIDDEN__ void log_backtrace(uintptr_t* stack_frames, size_t frame_count);
 
-int
-dl_iterate_phdr(int (*cb)(struct dl_phdr_info *info, size_t size, void *data),
-                void *data)
-{
-    struct dl_phdr_info dl_info;
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *) &__executable_start;
-    Elf32_Phdr *phdr = (Elf32_Phdr *)((unsigned long)ehdr + ehdr->e_phoff);
-
-    /* TODO: again, copied from linker.c. Find a better home for this
-     * later. */
-    if (ehdr->e_ident[EI_MAG0] != ELFMAG0) return -1;
-    if (ehdr->e_ident[EI_MAG1] != ELFMAG1) return -1;
-    if (ehdr->e_ident[EI_MAG2] != ELFMAG2) return -1;
-    if (ehdr->e_ident[EI_MAG3] != ELFMAG3) return -1;
-
-    dl_info.dlpi_addr = 0;
-    dl_info.dlpi_name = NULL;
-    dl_info.dlpi_phdr = phdr;
-    dl_info.dlpi_phnum = ehdr->e_phnum;
-    return cb(&dl_info, sizeof (struct dl_phdr_info), data);
-}
+#endif /* DEBUG_STACKTRACE_H */

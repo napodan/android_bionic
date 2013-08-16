@@ -148,7 +148,7 @@ extern "C" void get_malloc_leak_info(uint8_t** info, size_t* overallSize,
     }
 
     // XXX: the protocol doesn't allow variable size for the stack trace (yet)
-    *infoSize = (sizeof(size_t) * 2) + (sizeof(intptr_t) * BACKTRACE_SIZE);
+    *infoSize = (sizeof(size_t) * 2) + (sizeof(uintptr_t) * BACKTRACE_SIZE);
     *overallSize = *infoSize * gHashTable.count;
     *backtraceSize = BACKTRACE_SIZE;
 
@@ -167,7 +167,7 @@ extern "C" void get_malloc_leak_info(uint8_t** info, size_t* overallSize,
     const int count = gHashTable.count;
     for (int i = 0 ; i < count ; ++i) {
         HashEntry* entry = list[i];
-        size_t entrySize = (sizeof(size_t) * 2) + (sizeof(intptr_t) * entry->numEntries);
+        size_t entrySize = (sizeof(size_t) * 2) + (sizeof(uintptr_t) * entry->numEntries);
         if (entrySize < *infoSize) {
             /* we're writing less than a full entry, clear out the rest */
             memset(head + entrySize, 0, *infoSize - entrySize);
@@ -242,7 +242,7 @@ extern "C" void* memalign(size_t alignment, size_t bytes) {
     return __libc_malloc_dispatch->memalign(alignment, bytes);
 }
 
-/* We implement malloc debugging only in libc.so, so code bellow
+/* We implement malloc debugging only in libc.so, so code below
  * must be excluded if we compile this file for static libc.a
  */
 #ifndef LIBC_STATIC
@@ -256,7 +256,7 @@ static MallocDebug gMallocUse __attribute__((aligned(32))) = {
     dlmalloc, dlfree, dlcalloc, dlrealloc, dlmemalign
 };
 
-extern char* __progname;
+extern const char* __progname;
 
 /* Handle to shared library where actual memory allocation is implemented.
  * This library is loaded and memory allocation calls are redirected there
@@ -280,21 +280,18 @@ extern char* __progname;
  */
 static void* libc_malloc_impl_handle = NULL;
 
-/* Make sure we have MALLOC_ALIGNMENT that matches the one that is
- * used in dlmalloc. Emulator's memchecker needs this value to properly
- * align its guarding zones.
- */
+// This must match the alignment used by dlmalloc.
 #ifndef MALLOC_ALIGNMENT
-#define MALLOC_ALIGNMENT ((size_t)8U)
-#endif  /* MALLOC_ALIGNMENT */
+#define MALLOC_ALIGNMENT ((size_t)(2 * sizeof(void *)))
+#endif
 
 /* This variable is set to the value of property libc.debug.malloc.backlog,
  * when the value of libc.debug.malloc = 10.  It determines the size of the
  * backlog we use to detect multiple frees.  If the property is not set, the
- * backlog length defaults to an internal constant defined in
- * malloc_debug_check.cpp.
+ * backlog length defaults to BACKLOG_DEFAULT_LEN.
  */
-unsigned int malloc_double_free_backlog;
+unsigned int gMallocDebugBacklog;
+#define BACKLOG_DEFAULT_LEN 100
 
 /* The value of libc.debug.malloc. */
 int gMallocDebugLevel;
@@ -381,6 +378,13 @@ static void malloc_init_impl() {
         }
     }
 
+    // mksh is way too leaky. http://b/7291287.
+    if (gMallocDebugLevel >= 10) {
+        if (strcmp(__progname, "sh") == 0 || strcmp(__progname, "/system/bin/sh") == 0) {
+            return;
+        }
+    }
+
     // Choose the appropriate .so for the requested debug level.
     switch (gMallocDebugLevel) {
         case 1:
@@ -388,9 +392,11 @@ static void malloc_init_impl() {
         case 10: {
             char debug_backlog[PROP_VALUE_MAX];
             if (__system_property_get("libc.debug.malloc.backlog", debug_backlog)) {
-                malloc_double_free_backlog = atoi(debug_backlog);
-                info_log("%s: setting backlog length to %d\n",
-                         __progname, malloc_double_free_backlog);
+                gMallocDebugBacklog = atoi(debug_backlog);
+                info_log("%s: setting backlog length to %d\n", __progname, gMallocDebugBacklog);
+            }
+            if (gMallocDebugBacklog == 0) {
+                gMallocDebugBacklog = BACKLOG_DEFAULT_LEN;
             }
             so_name = "/system/lib/libc_malloc_debug_leak.so";
             break;
@@ -432,7 +438,7 @@ static void malloc_init_impl() {
         dlclose(libc_malloc_impl_handle);
         return;
     }
-    if (malloc_debug_initialize()) {
+    if (malloc_debug_initialize() == -1) {
         dlclose(libc_malloc_impl_handle);
         return;
     }
@@ -449,6 +455,7 @@ static void malloc_init_impl() {
             dlclose(libc_malloc_impl_handle);
             return;
         }
+
         if (memcheck_initialize(MALLOC_ALIGNMENT, memcheck_tracing)) {
             dlclose(libc_malloc_impl_handle);
             return;
@@ -489,11 +496,19 @@ static void malloc_init_impl() {
 }
 
 static void malloc_fini_impl() {
-    if (libc_malloc_impl_handle) {
+    // Our BSD stdio implementation doesn't close the standard streams, it only flushes them.
+    // And it doesn't do that until its atexit handler (_cleanup) is run, and we run first!
+    // It's great that other unclosed FILE*s show up as malloc leaks, but we need to manually
+    // clean up the standard streams ourselves.
+    fclose(stdin);
+    fclose(stdout);
+    fclose(stderr);
+
+    if (libc_malloc_impl_handle != NULL) {
         MallocDebugFini malloc_debug_finalize =
             reinterpret_cast<MallocDebugFini>(dlsym(libc_malloc_impl_handle,
                                                     "malloc_debug_finalize"));
-        if (malloc_debug_finalize) {
+        if (malloc_debug_finalize != NULL) {
             malloc_debug_finalize();
         }
     }
@@ -513,17 +528,17 @@ extern "C" void malloc_debug_init() {
     /* We need to initialize malloc iff we implement here custom
      * malloc routines (i.e. USE_DL_PREFIX is defined) for libc.so */
 #if defined(USE_DL_PREFIX) && !defined(LIBC_STATIC)
-  if (pthread_once(&malloc_init_once_ctl, malloc_init_impl)) {
+    if (pthread_once(&malloc_init_once_ctl, malloc_init_impl)) {
         error_log("Unable to initialize malloc_debug component.");
     }
 #endif  // USE_DL_PREFIX && !LIBC_STATIC
 }
 
 extern "C" void malloc_debug_fini() {
-  /* We need to finalize malloc iff we implement here custom
+    /* We need to finalize malloc iff we implement here custom
      * malloc routines (i.e. USE_DL_PREFIX is defined) for libc.so */
 #if defined(USE_DL_PREFIX) && !defined(LIBC_STATIC)
-  if (pthread_once(&malloc_fini_once_ctl, malloc_fini_impl)) {
+    if (pthread_once(&malloc_fini_once_ctl, malloc_fini_impl)) {
         error_log("Unable to finalize malloc_debug component.");
     }
 #endif  // USE_DL_PREFIX && !LIBC_STATIC
