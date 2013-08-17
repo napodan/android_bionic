@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2011 The Android Open Source Project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,23 +25,8 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef _SYS_PRCTL_H
-#define _SYS_PRCTL_H
-
-#include <linux/prctl.h>
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
-
-/* IMPORTANT NOTE: This function is declared as taking a variable number
- *                 of arguments to match the GLibc definition. However
- *                 its declaration inside SYSCALLS.TXT *must* make it
- *                 take 6 arguments to ensure consistency with the kernel
- *                 implementation.
- */
-extern int prctl(int option, ...);
-
-__END_DECLS
-
-#endif /* _SYS_PRCTL_H */
-
+#ifndef _NET_ETHERNET_H_
+#define _NET_IF_ETHERNET_H_
+#include <linux/if_ether.h>
+#include <net/if_ether.h>
+#endif /* !_NET_ETHERNET_H_ */
