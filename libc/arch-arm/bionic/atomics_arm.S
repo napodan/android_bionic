@@ -25,7 +25,7 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <sys/linux-syscalls.h>
+#include <asm/unistd.h>
 #include <machine/asm.h>
 #include <machine/cpu-features.h>
 
