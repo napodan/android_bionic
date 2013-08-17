@@ -45,7 +45,6 @@ extern void*  memmem(const void *, size_t, const void *, size_t) __purefunc;
 extern void   memswap(void *, void *, size_t);
 
 extern char*  index(const char *, int) __purefunc;
-extern char*  rindex(const char *, int) __purefunc;
 extern char*  strchr(const char *, int) __purefunc;
 extern char*  strrchr(const char *, int) __purefunc;
 
@@ -85,11 +84,29 @@ extern char*  strsignal(int  sig);
 extern int    strcoll(const char *, const char *) __purefunc;
 extern size_t strxfrm(char *, const char *, size_t);
 
-#if defined(__BIONIC_FORTIFY_INLINE)
+#if defined(__BIONIC_FORTIFY)
+
+extern void __memcpy_dest_size_error()
+    __attribute__((__error__("memcpy called with size bigger than destination")));
+extern void __memcpy_src_size_error()
+    __attribute__((__error__("memcpy called with size bigger than source")));
 
 __BIONIC_FORTIFY_INLINE
-void *memcpy (void *dest, const void *src, size_t len) {
-    return __builtin___memcpy_chk(dest, src, len, __builtin_object_size (dest, 0));
+void *memcpy (void *dest, const void *src, size_t copy_amount) {
+    char *d = (char *) dest;
+    const char *s = (const char *) src;
+    size_t s_len = __builtin_object_size(s, 0);
+    size_t d_len = __builtin_object_size(d, 0);
+
+    if (__builtin_constant_p(copy_amount) && (copy_amount > d_len)) {
+        __memcpy_dest_size_error();
+    }
+
+    if (__builtin_constant_p(copy_amount) && (copy_amount > s_len)) {
+        __memcpy_src_size_error();
+    }
+
+    return __builtin___memcpy_chk(dest, src, copy_amount, d_len);
 }
 
 __BIONIC_FORTIFY_INLINE
@@ -122,10 +139,10 @@ void *memset (void *s, int c, size_t n) {
     return __builtin___memset_chk(s, c, n, __builtin_object_size (s, 0));
 }
 
-extern size_t strlcpy_real(char *, const char *, size_t)
+extern size_t __strlcpy_real(char *, const char *, size_t)
     __asm__(__USER_LABEL_PREFIX__ "strlcpy");
 extern void __strlcpy_error()
-    __attribute__((error ("strlcpy called with size bigger than buffer")));
+    __attribute__((__error__("strlcpy called with size bigger than buffer")));
 extern size_t __strlcpy_chk(char *, const char *, size_t, size_t);
 
 __BIONIC_FORTIFY_INLINE
@@ -133,14 +150,14 @@ size_t strlcpy(char *dest, const char *src, size_t size) {
     size_t bos = __builtin_object_size(dest, 0);
 
     // Compiler doesn't know destination size. Don't call __strlcpy_chk
-    if (bos == (size_t) -1) {
-        return strlcpy_real(dest, src, size);
+    if (bos == __BIONIC_FORTIFY_UNKNOWN_SIZE) {
+        return __strlcpy_real(dest, src, size);
     }
 
     // Compiler can prove, at compile time, that the passed in size
     // is always <= the actual object size. Don't call __strlcpy_chk
     if (__builtin_constant_p(size) && (size <= bos)) {
-        return strlcpy_real(dest, src, size);
+        return __strlcpy_real(dest, src, size);
     }
 
     // Compiler can prove, at compile time, that the passed in size
@@ -152,10 +169,10 @@ size_t strlcpy(char *dest, const char *src, size_t size) {
     return __strlcpy_chk(dest, src, size, bos);
 }
 
-extern size_t strlcat_real(char *, const char *, size_t)
+extern size_t __strlcat_real(char *, const char *, size_t)
     __asm__(__USER_LABEL_PREFIX__ "strlcat");
 extern void __strlcat_error()
-    __attribute__((error ("strlcat called with size bigger than buffer")));
+    __attribute__((__error__("strlcat called with size bigger than buffer")));
 extern size_t __strlcat_chk(char *, const char *, size_t, size_t);
 
 
@@ -164,14 +181,14 @@ size_t strlcat(char *dest, const char *src, size_t size) {
     size_t bos = __builtin_object_size(dest, 0);
 
     // Compiler doesn't know destination size. Don't call __strlcat_chk
-    if (bos == (size_t) -1) {
-        return strlcat_real(dest, src, size);
+    if (bos == __BIONIC_FORTIFY_UNKNOWN_SIZE) {
+        return __strlcat_real(dest, src, size);
     }
 
     // Compiler can prove, at compile time, that the passed in size
     // is always <= the actual object size. Don't call __strlcat_chk
     if (__builtin_constant_p(size) && (size <= bos)) {
-        return strlcat_real(dest, src, size);
+        return __strlcat_real(dest, src, size);
     }
 
     // Compiler can prove, at compile time, that the passed in size
@@ -183,8 +200,65 @@ size_t strlcat(char *dest, const char *src, size_t size) {
     return __strlcat_chk(dest, src, size, bos);
 }
 
+extern size_t __strlen_chk(const char *, size_t);
 
-#endif /* defined(__BIONIC_FORTIFY_INLINE) */
+__BIONIC_FORTIFY_INLINE
+size_t strlen(const char *s) {
+    size_t bos = __builtin_object_size(s, 0);
+
+    // Compiler doesn't know destination size. Don't call __strlen_chk
+    if (bos == __BIONIC_FORTIFY_UNKNOWN_SIZE) {
+        return __builtin_strlen(s);
+    }
+
+    size_t slen = __builtin_strlen(s);
+    if (__builtin_constant_p(slen)) {
+        return slen;
+    }
+
+    return __strlen_chk(s, bos);
+}
+
+extern char* __strchr_chk(const char *, int, size_t);
+
+__BIONIC_FORTIFY_INLINE
+char* strchr(const char *s, int c) {
+    size_t bos = __builtin_object_size(s, 0);
+
+    // Compiler doesn't know destination size. Don't call __strchr_chk
+    if (bos == __BIONIC_FORTIFY_UNKNOWN_SIZE) {
+        return __builtin_strchr(s, c);
+    }
+
+    size_t slen = __builtin_strlen(s);
+    if (__builtin_constant_p(slen) && (slen < bos)) {
+        return __builtin_strchr(s, c);
+    }
+
+    return __strchr_chk(s, c, bos);
+}
+
+extern char* __strrchr_chk(const char *, int, size_t);
+
+__BIONIC_FORTIFY_INLINE
+char* strrchr(const char *s, int c) {
+    size_t bos = __builtin_object_size(s, 0);
+
+    // Compiler doesn't know destination size. Don't call __strrchr_chk
+    if (bos == __BIONIC_FORTIFY_UNKNOWN_SIZE) {
+        return __builtin_strrchr(s, c);
+    }
+
+    size_t slen = __builtin_strlen(s);
+    if (__builtin_constant_p(slen) && (slen < bos)) {
+        return __builtin_strrchr(s, c);
+    }
+
+    return __strrchr_chk(s, c, bos);
+}
+
+
+#endif /* defined(__BIONIC_FORTIFY) */
 
 __END_DECLS
 

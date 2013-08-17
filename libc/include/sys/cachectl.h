@@ -25,23 +25,12 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef _SYS_PRCTL_H
-#define _SYS_PRCTL_H
+#ifndef _SYS_CACHECTL_H
+#define _SYS_CACHECTL_H 1
 
-#include <linux/prctl.h>
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
-
-/* IMPORTANT NOTE: This function is declared as taking a variable number
- *                 of arguments to match the GLibc definition. However
- *                 its declaration inside SYSCALLS.TXT *must* make it
- *                 take 6 arguments to ensure consistency with the kernel
- *                 implementation.
- */
-extern int prctl(int option, ...);
-
-__END_DECLS
-
-#endif /* _SYS_PRCTL_H */
-
+#ifdef __mips__
+#include <asm/cachectl.h>
+extern int __cachectl (void *addr, __const int nbytes, __const int op);
+extern int _flush_cache (char *addr, __const int nbytes, __const int op);
+#endif
+#endif /* sys/cachectl.h */
