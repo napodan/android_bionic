@@ -36,13 +36,9 @@ __BEGIN_DECLS
 /* on Linux, ENOTSUP and EOPNOTSUPP are defined as the same error code
  * even if 1000.3 states that they should be different
  */
-#ifndef  ENOTUP
+#ifndef  ENOTSUP
 #define  ENOTSUP  EOPNOTSUPP
 #endif
-
-/* internal function that should *only* be called from system calls */
-/* use errno = xxxx instead in C code                               */
-extern int    __set_errno(int  error);
 
 /* internal function returning the address of the thread-specific errno */
 extern volatile int*   __errno(void);
