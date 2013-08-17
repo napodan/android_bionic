@@ -103,12 +103,18 @@ extern int clock_gettime(int, struct timespec *);
 #define CLOCK_THREAD_CPUTIME_ID    3
 #define CLOCK_REALTIME_HR          4
 #define CLOCK_MONOTONIC_HR         5
+#define CLOCK_BOOTTIME             7
 
 extern int  timer_create(int, struct sigevent*, timer_t*);
 extern int  timer_delete(timer_t);
 extern int  timer_settime(timer_t timerid, int flags, const struct itimerspec *value, struct itimerspec *ovalue);
 extern int  timer_gettime(timer_t timerid, struct itimerspec *value);
 extern int  timer_getoverrun(timer_t  timerid);
+
+extern time_t timelocal(struct tm *tm);
+extern time_t timegm(struct tm* tm);
+extern time_t time2posix(time_t ti);
+extern time_t posix2time(time_t ti);
 
 __END_DECLS
 
