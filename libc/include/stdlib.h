@@ -30,12 +30,6 @@
 
 #include <sys/cdefs.h>
 
-/* wchar_t is required in stdlib.h according to POSIX.
- * note that defining __need_wchar_t prevents stddef.h
- * to define all other symbols it does normally */
-#define __need_wchar_t
-#include <stddef.h>
-
 #include <stddef.h>
 #include <string.h>
 #include <alloca.h>
@@ -57,8 +51,9 @@ extern int setenv(const char *, const char *, int);
 extern int unsetenv(const char *);
 extern int clearenv(void);
 
-extern char *mktemp (char *);
-extern int mkstemp (char *);
+extern char *mkdtemp(char *);
+extern char *mktemp(char *);
+extern int mkstemp(char *);
 
 extern long strtol(const char *, char **, int);
 extern long long strtoll(const char *, char **, int);
@@ -66,14 +61,16 @@ extern unsigned long strtoul(const char *, char **, int);
 extern unsigned long long strtoull(const char *, char **, int);
 extern double strtod(const char *nptr, char **endptr);
 
+extern int posix_memalign(void **memptr, size_t alignment, size_t size);
+
 static __inline__ float strtof(const char *nptr, char **endptr)
 {
     return (float)strtod(nptr, endptr);
 }
 
-extern int atoi(const char *);
-extern long atol(const char *);
-extern long long atoll(const char *);
+extern int atoi(const char *) __purefunc;
+extern long atol(const char *) __purefunc;
+extern long long atoll(const char *) __purefunc;
 
 static __inline__ double atof(const char *nptr)
 {

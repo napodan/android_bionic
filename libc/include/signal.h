@@ -43,53 +43,68 @@ __BEGIN_DECLS
 
 typedef int sig_atomic_t;
 
-/* crepy NIG / _NSIG handling, just to be safe */
-#ifndef NSIG
-#  define NSIG  _NSIG
-#endif
+/* _NSIG is used by the SIGRTMAX definition under <asm/signal.h>, however
+ * its definition is part of a #if __KERNEL__ .. #endif block in the original
+ * kernel headers and is thus not part of our cleaned-up versions.
+ *
+ * Looking at the current kernel sources, it is defined as 64 for all
+ * architectures except for the 'mips' one which set it to 128.
+ */
 #ifndef _NSIG
-#  define _NSIG  NSIG
+#  define _NSIG  64
 #endif
 
-extern const char * const sys_siglist[];
-extern const char * const sys_signame[];
+extern const char* const sys_siglist[];
+extern const char* const sys_signame[];
 
-static __inline__ int sigismember(sigset_t *set, int signum)
-{
-    unsigned long *local_set = (unsigned long *)set;
-    signum--;
-    return (int)((local_set[signum/LONG_BIT] >> (signum%LONG_BIT)) & 1);
+static __inline__ int sigismember(const sigset_t* set, int signum) {
+  int bit = signum - 1; // Signal numbers start at 1, but bit positions start at 0.
+  if (set == NULL || bit < 0 || bit >= (int) (8*sizeof(sigset_t))) {
+    errno = EINVAL;
+    return -1;
+  }
+  const unsigned long* local_set = (const unsigned long*) set;
+  return (int) ((local_set[bit / LONG_BIT] >> (bit % LONG_BIT)) & 1);
 }
 
-
-static __inline__ int sigaddset(sigset_t *set, int signum)
-{
-    unsigned long *local_set = (unsigned long *)set;
-    signum--;
-    local_set[signum/LONG_BIT] |= 1UL << (signum%LONG_BIT);
-    return 0;
+static __inline__ int sigaddset(sigset_t* set, int signum) {
+  int bit = signum - 1; // Signal numbers start at 1, but bit positions start at 0.
+  if (set == NULL || bit < 0 || bit >= (int) (8*sizeof(sigset_t))) {
+    errno = EINVAL;
+    return -1;
+  }
+  unsigned long* local_set = (unsigned long*) set;
+  local_set[bit / LONG_BIT] |= 1UL << (bit % LONG_BIT);
+  return 0;
 }
 
-
-static __inline__ int sigdelset(sigset_t *set, int signum)
-{
-    unsigned long *local_set = (unsigned long *)set;
-    signum--;
-    local_set[signum/LONG_BIT] &= ~(1UL << (signum%LONG_BIT));
-    return 0;
+static __inline__ int sigdelset(sigset_t* set, int signum) {
+  int bit = signum - 1; // Signal numbers start at 1, but bit positions start at 0.
+  if (set == NULL || bit < 0 || bit >= (int) (8*sizeof(sigset_t))) {
+    errno = EINVAL;
+    return -1;
+  }
+  unsigned long* local_set = (unsigned long*) set;
+  local_set[bit / LONG_BIT] &= ~(1UL << (bit % LONG_BIT));
+  return 0;
 }
 
-
-static __inline__ int sigemptyset(sigset_t *set)
-{
-    memset(set, 0, sizeof *set);
-    return 0;
+static __inline__ int sigemptyset(sigset_t* set) {
+  if (set == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  memset(set, 0, sizeof *set);
+  return 0;
 }
 
-static __inline__ int sigfillset(sigset_t *set)
-{
-    memset(set, ~0, sizeof *set);
-    return 0;
+static __inline__ int sigfillset(sigset_t* set) {
+  if (set == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  memset(set, ~0, sizeof *set);
+  return 0;
 }
 
 
@@ -123,6 +138,8 @@ extern int kill(pid_t, int);
 extern int killpg(int pgrp, int sig);
 extern int sigaltstack(const stack_t *ss, stack_t *oss);
 
+extern void psiginfo(const siginfo_t* si, const char* message);
+extern void psignal(int signal_number, const char* message);
 
 __END_DECLS
 
