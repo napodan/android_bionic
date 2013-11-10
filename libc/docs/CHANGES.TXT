@@ -80,6 +80,8 @@ Differences between current and Android 2.2:
   linked to the C library. This fixes one of the bug that explains why gdbserver
   didn't work well with threads.
 
+- <math.h>: Added sincos() and sincosf() (GLibc compatibility).
+
 -------------------------------------------------------------------------------
 Differences between Android 2.2. and Android 2.1:
 
