@@ -369,6 +369,7 @@ libc_common_src_files += \
 # up any thumb code.
 libc_common_src_files += \
 	bionic/pthread.c.arm \
+	bionic/pthread-atfork.c.arm \
 	bionic/pthread-rwlocks.c.arm \
 	bionic/pthread-timers.c.arm \
 	bionic/ptrace.c.arm
@@ -407,6 +408,7 @@ libc_common_src_files += \
 	arch-x86/string/strncmp_wrapper.S \
 	arch-x86/string/strlen_wrapper.S \
 	bionic/pthread.c \
+	bionic/pthread-atfork.c \
 	bionic/pthread-rwlocks.c \
 	bionic/pthread-timers.c \
 	bionic/ptrace.c
@@ -447,6 +449,7 @@ libc_common_src_files += \
 	string/memcmp.c \
 	string/strlen.c \
 	bionic/pthread.c \
+	bionic/pthread-atfork.c \
 	bionic/pthread-rwlocks.c \
 	bionic/pthread-timers.c \
 	bionic/ptrace.c \
