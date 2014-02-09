@@ -1,5 +1,3 @@
-/*	$OpenBSD: local.h,v 1.12 2005/10/10 17:37:44 espie Exp $	*/
-
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,65 +30,67 @@
  * SUCH DAMAGE.
  */
 
-#include "wcio.h"
-#include "fileext.h"
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)fwrite.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
 
-
-/*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
- */
-
-int	__sflush(FILE *);
-int	__sflush_locked(FILE *);
-FILE	*__sfp(void);
-int	__srefill(FILE *);
-int	__sread(void *, char *, int);
-int	__swrite(void *, const char *, int);
-fpos_t	__sseek(void *, fpos_t, int);
-int	__sclose(void *);
-void	__sinit(void);
-void	_cleanup(void);
-void	__smakebuf(FILE *);
-int	__swhatbuf(FILE *, size_t *, int *);
-int	_fwalk(int (*)(FILE *));
-int	__swsetup(FILE *);
-int	__sflags(const char *, int *);
-int	__vfprintf(FILE *, const char *, __va_list);
-
-extern void __atexit_register_cleanup(void (*)(void));
-/*
- * Function to clean up streams, called from abort() and exit().
- */
-extern void (*__cleanup)(void);
-extern int __sdidinit;
+#include "namespace.h"
+#include <errno.h>
+#include <stdint.h>
+#include <stdio.h>
+#include "un-namespace.h"
+#include "local.h"
+#include "fvwrite.h"
+#include "libc_private.h"
 
 /*
- * Return true if the given FILE cannot be written now.
+ * Write `count' objects (each size `size') from memory to the given file.
+ * Return the number of whole objects written.
  */
-#define	cantwrite(fp) \
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && \
-	 __swsetup(fp))
+size_t
+fwrite(const void * __restrict buf, size_t size, size_t count, FILE * __restrict fp)
+{
+	size_t n;
+	struct __suio uio;
+	struct __siov iov;
 
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) (_UB(fp)._base != NULL)
-#define	FREEUB(fp) { \
-	if (_UB(fp)._base != (fp)->_ubuf) \
-		free(_UB(fp)._base); \
-	_UB(fp)._base = NULL; \
+	/*
+	 * ANSI and SUSv2 require a return value of 0 if size or count are 0.
+	 */
+	if ((count == 0) || (size == 0))
+		return (0);
+
+	/*
+	 * Check for integer overflow.  As an optimization, first check that
+	 * at least one of {count, size} is at least 2^16, since if both
+	 * values are less than that, their product can't possible overflow
+	 * (size_t is always at least 32 bits on FreeBSD).
+	 */
+	if (((count | size) > 0xFFFF) &&
+	    (count > SIZE_MAX / size)) {
+		errno = EINVAL;
+		fp->_flags |= __SERR;
+		return (0);
+	}
+
+	n = count * size;
+
+	iov.iov_base = (void *)buf;
+	uio.uio_resid = iov.iov_len = n;
+	uio.uio_iov = &iov;
+	uio.uio_iovcnt = 1;
+
+	FLOCKFILE(fp);
+	ORIENT(fp, -1);
+	/*
+	 * The usual case is success (__sfvwrite returns 0);
+	 * skip the divide if this happens, since divides are
+	 * generally slow and since this occurs whenever size==0.
+	 */
+	if (__sfvwrite(fp, &uio) != 0)
+	    count = (n - uio.uio_resid) / size;
+	FUNLOCKFILE(fp);
+	return (count);
 }
-
-/*
- * test for an fgetln() buffer.
- */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { \
-	free((char *)(fp)->_lb._base); \
-	(fp)->_lb._base = NULL; \
-}
-
-#define FLOCKFILE(fp)   do { if (__isthreaded) flockfile(fp); } while (0)
-#define FUNLOCKFILE(fp) do { if (__isthreaded) funlockfile(fp); } while (0)
