@@ -185,6 +185,7 @@
 #define __NR_eventfd2                     (__NR_SYSCALL_BASE + 356)
 #define __NR_ARM_set_tls                  (__NR_SYSCALL_BASE + 983045)
 #define __NR_ARM_cacheflush               (__NR_SYSCALL_BASE + 983042)
+#define __NR_eventfd                      (__NR_SYSCALL_BASE + 351)
 #endif
 
 #ifdef __i386__

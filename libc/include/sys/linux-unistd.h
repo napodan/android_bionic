@@ -205,6 +205,7 @@ int              poll (struct pollfd *, unsigned int, long);
 int              eventfd (unsigned int, int);
 int              __set_tls (void*);
 int              cacheflush (long start, long end, long flags);
+int              eventfd (int count, int flags);
 #ifdef __cplusplus
 }
 #endif
