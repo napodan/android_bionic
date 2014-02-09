@@ -48,7 +48,6 @@ libc_common_src_files := \
 	stdlib/exit.c \
 	stdlib/getenv.c \
 	stdlib/putenv.c \
-	stdlib/qsort.c \
 	stdlib/setenv.c \
 	stdlib/strtod.c \
 	stdlib/strtoimax.c \
@@ -59,9 +58,7 @@ libc_common_src_files := \
 	stdlib/strtoumax.c \
 	stdlib/tolower_.c \
 	stdlib/toupper_.c \
-	string/index.c \
 	string/strcasecmp.c \
-	string/strcat.c \
 	string/strchr.c \
 	string/strcspn.c \
 	string/strdup.c \
@@ -203,6 +200,23 @@ libc_common_src_files := \
 	netbsd/nameser/ns_print.c \
 	netbsd/nameser/ns_samedomain.c \
 
+# Fortify implementations of libc functions.
+libc_common_src_files += \
+    bionic/__fgets_chk.cpp \
+    bionic/__memcpy_chk.cpp \
+    bionic/__memmove_chk.cpp \
+    bionic/__memset_chk.cpp \
+    bionic/__strcat_chk.cpp \
+    bionic/__strcpy_chk.cpp \
+    bionic/__strlcat_chk.cpp \
+    bionic/__strlcpy_chk.cpp \
+    bionic/__strlen_chk.cpp \
+    bionic/__strncat_chk.cpp \
+    bionic/__strncpy_chk.cpp \
+    bionic/__umask_chk.cpp \
+    bionic/__vsnprintf_chk.cpp \
+    bionic/__vsprintf_chk.cpp \
+
 libc_bionic_src_files := \
     bionic/abort.cpp \
     bionic/assert.cpp \
@@ -211,15 +225,11 @@ libc_bionic_src_files := \
     bionic/__errno.c \
     bionic/eventfd_read.cpp \
     bionic/eventfd_write.cpp \
-    bionic/__fgets_chk.cpp \
     bionic/getauxval.cpp \
     bionic/getcwd.cpp \
     bionic/libc_init_common.c \
     bionic/libc_logging.cpp \
     bionic/libgen.cpp \
-    bionic/__memcpy_chk.cpp \
-    bionic/__memmove_chk.cpp \
-    bionic/__memset_chk.cpp \
     bionic/raise.c \
     bionic/sbrk.cpp \
     bionic/scandir.cpp \
@@ -227,23 +237,13 @@ libc_bionic_src_files := \
     bionic/setlocale.cpp \
     bionic/signalfd.cpp \
     bionic/sigwait.cpp \
-    bionic/__strcat_chk.cpp \
-    bionic/__strcpy_chk.cpp \
     bionic/strerror.cpp \
     bionic/strerror_r.cpp \
-    bionic/__strlcat_chk.cpp \
-    bionic/__strlcpy_chk.cpp \
-    bionic/__strlen_chk.cpp \
-    bionic/__strncat_chk.cpp \
-    bionic/__strncpy_chk.cpp \
     bionic/strsignal.cpp \
     bionic/stubs.cpp \
     bionic/sysconf.cpp \
     bionic/tdestroy.cpp \
     bionic/tmpfile.cpp \
-    bionic/__umask_chk.cpp \
-    bionic/__vsnprintf_chk.cpp \
-    bionic/__vsprintf_chk.cpp \
     bionic/wait.cpp \
     bionic/wchar.cpp \
 
@@ -281,7 +281,13 @@ libc_upstream_freebsd_src_files := \
     upstream-freebsd/lib/libc/stdio/tempnam.c \
     upstream-freebsd/lib/libc/stdio/tmpnam.c \
     upstream-freebsd/lib/libc/stdio/wsetup.c \
+    upstream-freebsd/lib/libc/stdlib/abs.c \
     upstream-freebsd/lib/libc/stdlib/getopt_long.c \
+    upstream-freebsd/lib/libc/stdlib/imaxabs.c \
+    upstream-freebsd/lib/libc/stdlib/imaxdiv.c \
+    upstream-freebsd/lib/libc/stdlib/labs.c \
+    upstream-freebsd/lib/libc/stdlib/llabs.c \
+    upstream-freebsd/lib/libc/stdlib/qsort.c \
     upstream-freebsd/lib/libc/stdlib/realpath.c \
     upstream-freebsd/lib/libc/string/wcpcpy.c \
     upstream-freebsd/lib/libc/string/wcpncpy.c \
@@ -362,6 +368,7 @@ libc_common_src_files += \
 	bionic/memmove.c.arm \
 	string/bcopy.c \
 	string/strncmp.c \
+	string/index.c \
 
 # These files need to be arm so that gdbserver
 # can set breakpoints in them without messing
@@ -383,7 +390,6 @@ libc_common_src_files += \
     bionic/pthread-rwlocks.c \
     bionic/pthread-timers.c \
     bionic/ptrace.c \
-    string/strcpy.c \
 
 libc_static_common_src_files += \
     bionic/pthread.c \
@@ -398,7 +404,9 @@ libc_common_src_files += \
 	string/bcopy.c \
 	string/strcmp.c \
 	string/strcpy.c \
-	string/strncmp.c
+	string/strncmp.c \
+	string/strcat.c \
+	string/index.c \
 
 libc_common_src_files += \
 	bionic/pthread-atfork.c \
