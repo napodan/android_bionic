@@ -1,5 +1,3 @@
-/*	$OpenBSD: local.h,v 1.12 2005/10/10 17:37:44 espie Exp $	*/
-
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,65 +30,41 @@
  * SUCH DAMAGE.
  */
 
-#include "wcio.h"
-#include "fileext.h"
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)puts.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
 
-
-/*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
- */
-
-int	__sflush(FILE *);
-int	__sflush_locked(FILE *);
-FILE	*__sfp(void);
-int	__srefill(FILE *);
-int	__sread(void *, char *, int);
-int	__swrite(void *, const char *, int);
-fpos_t	__sseek(void *, fpos_t, int);
-int	__sclose(void *);
-void	__sinit(void);
-void	_cleanup(void);
-void	__smakebuf(FILE *);
-int	__swhatbuf(FILE *, size_t *, int *);
-int	_fwalk(int (*)(FILE *));
-int	__swsetup(FILE *);
-int	__sflags(const char *, int *);
-int	__vfprintf(FILE *, const char *, __va_list);
-
-extern void __atexit_register_cleanup(void (*)(void));
-/*
- * Function to clean up streams, called from abort() and exit().
- */
-extern void (*__cleanup)(void);
-extern int __sdidinit;
+#include "namespace.h"
+#include <stdio.h>
+#include <string.h>
+#include "un-namespace.h"
+#include "fvwrite.h"
+#include "libc_private.h"
+#include "local.h"
 
 /*
- * Return true if the given FILE cannot be written now.
+ * Write the given string to stdout, appending a newline.
  */
-#define	cantwrite(fp) \
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && \
-	 __swsetup(fp))
+int
+puts(char const *s)
+{
+	int retval;
+	size_t c = strlen(s);
+	struct __suio uio;
+	struct __siov iov[2];
 
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) (_UB(fp)._base != NULL)
-#define	FREEUB(fp) { \
-	if (_UB(fp)._base != (fp)->_ubuf) \
-		free(_UB(fp)._base); \
-	_UB(fp)._base = NULL; \
+	iov[0].iov_base = (void *)s;
+	iov[0].iov_len = c;
+	iov[1].iov_base = "\n";
+	iov[1].iov_len = 1;
+	uio.uio_resid = c + 1;
+	uio.uio_iov = &iov[0];
+	uio.uio_iovcnt = 2;
+	FLOCKFILE(stdout);
+	ORIENT(stdout, -1);
+	retval = __sfvwrite(stdout, &uio) ? EOF : '\n';
+	FUNLOCKFILE(stdout);
+	return (retval);
 }
-
-/*
- * test for an fgetln() buffer.
- */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { \
-	free((char *)(fp)->_lb._base); \
-	(fp)->_lb._base = NULL; \
-}
-
-#define FLOCKFILE(fp)   do { if (__isthreaded) flockfile(fp); } while (0)
-#define FUNLOCKFILE(fp) do { if (__isthreaded) funlockfile(fp); } while (0)
