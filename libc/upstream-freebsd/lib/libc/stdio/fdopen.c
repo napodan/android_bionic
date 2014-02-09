@@ -1,5 +1,3 @@
-/*	$OpenBSD: local.h,v 1.12 2005/10/10 17:37:44 espie Exp $	*/
-
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,65 +30,73 @@
  * SUCH DAMAGE.
  */
 
-#include "wcio.h"
-#include "fileext.h"
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)fdopen.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
 
+#include "namespace.h"
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <errno.h>
+#include <limits.h>
+#include "un-namespace.h"
+#include "local.h"
 
-/*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
- */
+FILE *
+fdopen(int fd, const char *mode)
+{
+	FILE *fp;
+	int flags, oflags, fdflags, tmp;
 
-int	__sflush(FILE *);
-int	__sflush_locked(FILE *);
-FILE	*__sfp(void);
-int	__srefill(FILE *);
-int	__sread(void *, char *, int);
-int	__swrite(void *, const char *, int);
-fpos_t	__sseek(void *, fpos_t, int);
-int	__sclose(void *);
-void	__sinit(void);
-void	_cleanup(void);
-void	__smakebuf(FILE *);
-int	__swhatbuf(FILE *, size_t *, int *);
-int	_fwalk(int (*)(FILE *));
-int	__swsetup(FILE *);
-int	__sflags(const char *, int *);
-int	__vfprintf(FILE *, const char *, __va_list);
+	/*
+	 * File descriptors are a full int, but _file is only a short.
+	 * If we get a valid file descriptor that is greater than
+	 * SHRT_MAX, then the fd will get sign-extended into an
+	 * invalid file descriptor.  Handle this case by failing the
+	 * open.
+	 */
+	if (fd > SHRT_MAX) {
+		errno = EMFILE;
+		return (NULL);
+	}
 
-extern void __atexit_register_cleanup(void (*)(void));
-/*
- * Function to clean up streams, called from abort() and exit().
- */
-extern void (*__cleanup)(void);
-extern int __sdidinit;
+	if ((flags = __sflags(mode, &oflags)) == 0)
+		return (NULL);
 
-/*
- * Return true if the given FILE cannot be written now.
- */
-#define	cantwrite(fp) \
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && \
-	 __swsetup(fp))
+	/* Make sure the mode the user wants is a subset of the actual mode. */
+	if ((fdflags = _fcntl(fd, F_GETFL, 0)) < 0)
+		return (NULL);
+	tmp = fdflags & O_ACCMODE;
+	if (tmp != O_RDWR && (tmp != (oflags & O_ACCMODE))) {
+		errno = EINVAL;
+		return (NULL);
+	}
 
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) (_UB(fp)._base != NULL)
-#define	FREEUB(fp) { \
-	if (_UB(fp)._base != (fp)->_ubuf) \
-		free(_UB(fp)._base); \
-	_UB(fp)._base = NULL; \
+	if ((fp = __sfp()) == NULL)
+		return (NULL);
+
+	if ((oflags & O_CLOEXEC) && _fcntl(fd, F_SETFD, FD_CLOEXEC) == -1) {
+		fp->_flags = 0;
+		return (NULL);
+	}
+
+	fp->_flags = flags;
+	/*
+	 * If opened for appending, but underlying descriptor does not have
+	 * O_APPEND bit set, assert __SAPP so that __swrite() caller
+	 * will _sseek() to the end before write.
+	 */
+	if ((oflags & O_APPEND) && !(fdflags & O_APPEND))
+		fp->_flags |= __SAPP;
+	fp->_file = fd;
+	fp->_cookie = fp;
+	fp->_read = __sread;
+	fp->_write = __swrite;
+	fp->_seek = __sseek;
+	fp->_close = __sclose;
+	return (fp);
 }
-
-/*
- * test for an fgetln() buffer.
- */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { \
-	free((char *)(fp)->_lb._base); \
-	(fp)->_lb._base = NULL; \
-}
-
-#define FLOCKFILE(fp)   do { if (__isthreaded) flockfile(fp); } while (0)
-#define FUNLOCKFILE(fp) do { if (__isthreaded) funlockfile(fp); } while (0)

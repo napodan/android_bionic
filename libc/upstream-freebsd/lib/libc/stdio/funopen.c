@@ -1,5 +1,3 @@
-/*	$OpenBSD: local.h,v 1.12 2005/10/10 17:37:44 espie Exp $	*/
-
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,65 +30,47 @@
  * SUCH DAMAGE.
  */
 
-#include "wcio.h"
-#include "fileext.h"
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)funopen.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
 
+#include <stdio.h>
+#include <errno.h>
 
-/*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
- */
+#include "local.h"
 
-int	__sflush(FILE *);
-int	__sflush_locked(FILE *);
-FILE	*__sfp(void);
-int	__srefill(FILE *);
-int	__sread(void *, char *, int);
-int	__swrite(void *, const char *, int);
-fpos_t	__sseek(void *, fpos_t, int);
-int	__sclose(void *);
-void	__sinit(void);
-void	_cleanup(void);
-void	__smakebuf(FILE *);
-int	__swhatbuf(FILE *, size_t *, int *);
-int	_fwalk(int (*)(FILE *));
-int	__swsetup(FILE *);
-int	__sflags(const char *, int *);
-int	__vfprintf(FILE *, const char *, __va_list);
+FILE *
+funopen(const void *cookie,
+	int (*readfn)(void *, char *, int),
+	int (*writefn)(void *, const char *, int),
+	fpos_t (*seekfn)(void *, fpos_t, int),
+	int (*closefn)(void *))
+{
+	FILE *fp;
+	int flags;
 
-extern void __atexit_register_cleanup(void (*)(void));
-/*
- * Function to clean up streams, called from abort() and exit().
- */
-extern void (*__cleanup)(void);
-extern int __sdidinit;
-
-/*
- * Return true if the given FILE cannot be written now.
- */
-#define	cantwrite(fp) \
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && \
-	 __swsetup(fp))
-
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) (_UB(fp)._base != NULL)
-#define	FREEUB(fp) { \
-	if (_UB(fp)._base != (fp)->_ubuf) \
-		free(_UB(fp)._base); \
-	_UB(fp)._base = NULL; \
+	if (readfn == NULL) {
+		if (writefn == NULL) {		/* illegal */
+			errno = EINVAL;
+			return (NULL);
+		} else
+			flags = __SWR;		/* write only */
+	} else {
+		if (writefn == NULL)
+			flags = __SRD;		/* read only */
+		else
+			flags = __SRW;		/* read-write */
+	}
+	if ((fp = __sfp()) == NULL)
+		return (NULL);
+	fp->_flags = flags;
+	fp->_file = -1;
+	fp->_cookie = (void *)cookie;
+	fp->_read = readfn;
+	fp->_write = writefn;
+	fp->_seek = seekfn;
+	fp->_close = closefn;
+	return (fp);
 }
-
-/*
- * test for an fgetln() buffer.
- */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { \
-	free((char *)(fp)->_lb._base); \
-	(fp)->_lb._base = NULL; \
-}
-
-#define FLOCKFILE(fp)   do { if (__isthreaded) flockfile(fp); } while (0)
-#define FUNLOCKFILE(fp) do { if (__isthreaded) funlockfile(fp); } while (0)
