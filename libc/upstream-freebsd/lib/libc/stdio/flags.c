@@ -1,5 +1,3 @@
-/*	$OpenBSD: local.h,v 1.12 2005/10/10 17:37:44 espie Exp $	*/
-
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,65 +30,83 @@
  * SUCH DAMAGE.
  */
 
-#include "wcio.h"
-#include "fileext.h"
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)flags.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
 
+#include <sys/types.h>
+#include <sys/file.h>
+#include <stdio.h>
+#include <errno.h>
 
-/*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
- */
-
-int	__sflush(FILE *);
-int	__sflush_locked(FILE *);
-FILE	*__sfp(void);
-int	__srefill(FILE *);
-int	__sread(void *, char *, int);
-int	__swrite(void *, const char *, int);
-fpos_t	__sseek(void *, fpos_t, int);
-int	__sclose(void *);
-void	__sinit(void);
-void	_cleanup(void);
-void	__smakebuf(FILE *);
-int	__swhatbuf(FILE *, size_t *, int *);
-int	_fwalk(int (*)(FILE *));
-int	__swsetup(FILE *);
-int	__sflags(const char *, int *);
-int	__vfprintf(FILE *, const char *, __va_list);
-
-extern void __atexit_register_cleanup(void (*)(void));
-/*
- * Function to clean up streams, called from abort() and exit().
- */
-extern void (*__cleanup)(void);
-extern int __sdidinit;
+#include "local.h"
 
 /*
- * Return true if the given FILE cannot be written now.
+ * Return the (stdio) flags for a given mode.  Store the flags
+ * to be passed to an _open() syscall through *optr.
+ * Return 0 on error.
  */
-#define	cantwrite(fp) \
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && \
-	 __swsetup(fp))
+int
+__sflags(const char *mode, int *optr)
+{
+	int ret, m, o;
 
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) (_UB(fp)._base != NULL)
-#define	FREEUB(fp) { \
-	if (_UB(fp)._base != (fp)->_ubuf) \
-		free(_UB(fp)._base); \
-	_UB(fp)._base = NULL; \
+	switch (*mode++) {
+
+	case 'r':	/* open for reading */
+		ret = __SRD;
+		m = O_RDONLY;
+		o = 0;
+		break;
+
+	case 'w':	/* open for writing */
+		ret = __SWR;
+		m = O_WRONLY;
+		o = O_CREAT | O_TRUNC;
+		break;
+
+	case 'a':	/* open for appending */
+		ret = __SWR;
+		m = O_WRONLY;
+		o = O_CREAT | O_APPEND;
+		break;
+
+	default:	/* illegal mode */
+		errno = EINVAL;
+		return (0);
+	}
+
+	/* 'b' (binary) is ignored */
+	if (*mode == 'b')
+		mode++;
+
+	/* [rwa][b]\+ means read and write */
+	if (*mode == '+') {
+		mode++;
+		ret = __SRW;
+		m = O_RDWR;
+	}
+
+	/* 'b' (binary) can appear here, too -- and is ignored again */
+	if (*mode == 'b')
+		mode++;
+
+	/* 'x' means exclusive (fail if the file exists) */
+	if (*mode == 'x') {
+		mode++;
+		if (m == O_RDONLY) {
+			errno = EINVAL;
+			return (0);
+		}
+		o |= O_EXCL;
+	}
+
+	/* set close-on-exec */
+	if (*mode == 'e')
+		o |= O_CLOEXEC;
+
+	*optr = m | o;
+	return (ret);
 }
-
-/*
- * test for an fgetln() buffer.
- */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { \
-	free((char *)(fp)->_lb._base); \
-	(fp)->_lb._base = NULL; \
-}
-
-#define FLOCKFILE(fp)   do { if (__isthreaded) flockfile(fp); } while (0)
-#define FUNLOCKFILE(fp) do { if (__isthreaded) funlockfile(fp); } while (0)
