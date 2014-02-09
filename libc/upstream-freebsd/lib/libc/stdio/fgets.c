@@ -1,5 +1,3 @@
-/*	$OpenBSD: local.h,v 1.12 2005/10/10 17:37:44 espie Exp $	*/
-
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,65 +30,80 @@
  * SUCH DAMAGE.
  */
 
-#include "wcio.h"
-#include "fileext.h"
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)fgets.c	8.2 (Berkeley) 12/22/93";
+#endif /* LIBC_SCCS and not lint */
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
 
-
-/*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
- */
-
-int	__sflush(FILE *);
-int	__sflush_locked(FILE *);
-FILE	*__sfp(void);
-int	__srefill(FILE *);
-int	__sread(void *, char *, int);
-int	__swrite(void *, const char *, int);
-fpos_t	__sseek(void *, fpos_t, int);
-int	__sclose(void *);
-void	__sinit(void);
-void	_cleanup(void);
-void	__smakebuf(FILE *);
-int	__swhatbuf(FILE *, size_t *, int *);
-int	_fwalk(int (*)(FILE *));
-int	__swsetup(FILE *);
-int	__sflags(const char *, int *);
-int	__vfprintf(FILE *, const char *, __va_list);
-
-extern void __atexit_register_cleanup(void (*)(void));
-/*
- * Function to clean up streams, called from abort() and exit().
- */
-extern void (*__cleanup)(void);
-extern int __sdidinit;
+#include "namespace.h"
+#include <stdio.h>
+#include <string.h>
+#include "un-namespace.h"
+#include "local.h"
+#include "libc_private.h"
 
 /*
- * Return true if the given FILE cannot be written now.
+ * Read at most n-1 characters from the given file.
+ * Stop when a newline has been read, or the count runs out.
+ * Return first argument, or NULL if no characters were read.
  */
-#define	cantwrite(fp) \
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && \
-	 __swsetup(fp))
+char *
+fgets(char * __restrict buf, int n, FILE * __restrict fp)
+{
+	size_t len;
+	char *s;
+	unsigned char *p, *t;
 
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) (_UB(fp)._base != NULL)
-#define	FREEUB(fp) { \
-	if (_UB(fp)._base != (fp)->_ubuf) \
-		free(_UB(fp)._base); \
-	_UB(fp)._base = NULL; \
+	if (n <= 0)		/* sanity check */
+		return (NULL);
+
+	FLOCKFILE(fp);
+	ORIENT(fp, -1);
+	s = buf;
+	n--;			/* leave space for NUL */
+	while (n != 0) {
+		/*
+		 * If the buffer is empty, refill it.
+		 */
+		if ((len = fp->_r) <= 0) {
+			if (__srefill(fp)) {
+				/* EOF/error: stop with partial or no line */
+				if (s == buf) {
+					FUNLOCKFILE(fp);
+					return (NULL);
+				}
+				break;
+			}
+			len = fp->_r;
+		}
+		p = fp->_p;
+
+		/*
+		 * Scan through at most n bytes of the current buffer,
+		 * looking for '\n'.  If found, copy up to and including
+		 * newline, and stop.  Otherwise, copy entire chunk
+		 * and loop.
+		 */
+		if (len > n)
+			len = n;
+		t = memchr((void *)p, '\n', len);
+		if (t != NULL) {
+			len = ++t - p;
+			fp->_r -= len;
+			fp->_p = t;
+			(void)memcpy((void *)s, (void *)p, len);
+			s[len] = 0;
+			FUNLOCKFILE(fp);
+			return (buf);
+		}
+		fp->_r -= len;
+		fp->_p += len;
+		(void)memcpy((void *)s, (void *)p, len);
+		s += len;
+		n -= len;
+	}
+	*s = 0;
+	FUNLOCKFILE(fp);
+	return (buf);
 }
-
-/*
- * test for an fgetln() buffer.
- */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { \
-	free((char *)(fp)->_lb._base); \
-	(fp)->_lb._base = NULL; \
-}
-
-#define FLOCKFILE(fp)   do { if (__isthreaded) flockfile(fp); } while (0)
-#define FUNLOCKFILE(fp) do { if (__isthreaded) funlockfile(fp); } while (0)
