@@ -607,6 +607,16 @@ android_getaddrinfo_proxy(
 		return -1;
 	}
 
+	// Temporary cautious hack to disable the DNS proxy for processes
+	// requesting special treatment.  Ideally the DNS proxy should
+	// accomodate these apps, though.
+	char propname[PROP_NAME_MAX];
+	char propvalue[PROP_VALUE_MAX];
+	snprintf(propname, sizeof(propname), "net.dns1.%d", getpid());
+	if (__system_property_get(propname, propvalue) > 0) {
+		return -1;
+	}
+
 	// Bogus things we can't serialize.  Don't use the proxy.
 	if ((hostname != NULL &&
 	     strcspn(hostname, " \n\r\t^'\"") != strlen(hostname)) ||
