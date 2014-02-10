@@ -9,34 +9,16 @@
  ***
  ****************************************************************************
  ****************************************************************************/
-#ifndef __LINUX_USB_F_MTP_H
-#define __LINUX_USB_F_MTP_H
+#ifndef __LINUX_TEGRA_SEMA_H
+#define __LINUX_TEGRA_SEMA_H
 
-#define MTP_INTERFACE_MODE_MTP 0
-#define MTP_INTERFACE_MODE_PTP 1
+#define TEGRA_SEMA_IOCTL_MAGIC 'r'
 
-struct mtp_file_range {
+#define TEGRA_SEMA_IOCTL_WAIT _IOW(TEGRA_SEMA_IOCTL_MAGIC, 0x30, long *)
+#define TEGRA_SEMA_IOCTL_SIGNAL _IO(TEGRA_SEMA_IOCTL_MAGIC, 0x31)
 
- int fd;
-
- loff_t offset;
-
- int64_t length;
-};
-
-struct mtp_event {
-
- size_t length;
-
- void *data;
-};
-
-#define MTP_SEND_FILE _IOW('M', 0, struct mtp_file_range)
-
-#define MTP_RECEIVE_FILE _IOW('M', 1, struct mtp_file_range)
-
-#define MTP_SET_INTERFACE_MODE _IOW('M', 2, int)
-
-#define MTP_SEND_EVENT _IOW('M', 3, struct mtp_event)
+#define TEGRA_SEMA_IOCTL_MIN_NR _IOC_NR(TEGRA_SEMA_IOCTL_WAIT)
+#define TEGRA_SEMA_IOCTL_MAX_NR _IOC_NR(TEGRA_SEMA_IOCTL_SIGNAL)
 
 #endif
+

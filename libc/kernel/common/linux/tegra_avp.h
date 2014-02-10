@@ -9,34 +9,30 @@
  ***
  ****************************************************************************
  ****************************************************************************/
-#ifndef __LINUX_USB_F_MTP_H
-#define __LINUX_USB_F_MTP_H
+#ifndef __LINUX_TEGRA_AVP_H
+#define __LINUX_TEGRA_AVP_H
 
-#define MTP_INTERFACE_MODE_MTP 0
-#define MTP_INTERFACE_MODE_PTP 1
+#include <linux/ioctl.h>
+#include <linux/types.h>
 
-struct mtp_file_range {
+#define TEGRA_AVP_LIB_MAX_NAME 32
+#define TEGRA_AVP_LIB_MAX_ARGS 220  
 
- int fd;
-
- loff_t offset;
-
- int64_t length;
+struct tegra_avp_lib {
+ char name[TEGRA_AVP_LIB_MAX_NAME];
+ void __user *args;
+ size_t args_len;
+ int greedy;
+ unsigned long handle;
 };
 
-struct mtp_event {
+#define TEGRA_AVP_IOCTL_MAGIC 'r'
 
- size_t length;
+#define TEGRA_AVP_IOCTL_LOAD_LIB _IOWR(TEGRA_AVP_IOCTL_MAGIC, 0x40, struct tegra_avp_lib)
+#define TEGRA_AVP_IOCTL_UNLOAD_LIB _IOW(TEGRA_AVP_IOCTL_MAGIC, 0x41, unsigned long)
 
- void *data;
-};
-
-#define MTP_SEND_FILE _IOW('M', 0, struct mtp_file_range)
-
-#define MTP_RECEIVE_FILE _IOW('M', 1, struct mtp_file_range)
-
-#define MTP_SET_INTERFACE_MODE _IOW('M', 2, int)
-
-#define MTP_SEND_EVENT _IOW('M', 3, struct mtp_event)
+#define TEGRA_AVP_IOCTL_MIN_NR _IOC_NR(TEGRA_AVP_IOCTL_LOAD_LIB)
+#define TEGRA_AVP_IOCTL_MAX_NR _IOC_NR(TEGRA_AVP_IOCTL_UNLOAD_LIB)
 
 #endif
+
