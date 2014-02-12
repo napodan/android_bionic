@@ -1635,6 +1635,7 @@ _res_cache_init(void)
 
 struct resolv_cache*
 __get_res_cache(void)
+<<<<<<< HEAD
 {
     struct resolv_cache *cache;
 
@@ -1666,6 +1667,40 @@ __get_res_cache(void)
 static struct resolv_cache*
 _get_res_cache_for_iface_locked(const char* ifname)
 {
+=======
+{
+    struct resolv_cache *cache;
+
+    pthread_once(&_res_cache_once, _res_cache_init);
+
+    pthread_mutex_lock(&_res_cache_list_lock);
+
+    char* ifname = _get_default_iface_locked();
+
+    // if default interface not set then use the first cache
+    // associated with an interface as the default one.
+    if (ifname[0] == '\0') {
+        struct resolv_cache_info* cache_info = _res_cache_list.next;
+        while (cache_info) {
+            if (cache_info->ifname[0] != '\0') {
+                ifname = cache_info->ifname;
+                break;
+            }
+
+            cache_info = cache_info->next;
+        }
+    }
+    cache = _get_res_cache_for_iface_locked(ifname);
+
+    pthread_mutex_unlock(&_res_cache_list_lock);
+    XLOG("_get_res_cache. default_ifname = %s\n", ifname);
+    return cache;
+}
+
+static struct resolv_cache*
+_get_res_cache_for_iface_locked(const char* ifname)
+{
+>>>>>>> 9363d91218c7ed727c36ffaf82ff28d7755375ae
     if (ifname == NULL)
         return NULL;
 
@@ -1708,6 +1743,10 @@ _resolv_cache_reset(unsigned  generation)
         while (cache_info) {
             if (cache_info->ifname[0] != '\0') {
                 ifname = cache_info->ifname;
+<<<<<<< HEAD
+=======
+                break;
+>>>>>>> 9363d91218c7ed727c36ffaf82ff28d7755375ae
             }
 
             cache_info = cache_info->next;
@@ -1715,6 +1754,7 @@ _resolv_cache_reset(unsigned  generation)
     }
     struct resolv_cache* cache = _get_res_cache_for_iface_locked(ifname);
 
+<<<<<<< HEAD
     if (cache == NULL) {
         pthread_mutex_unlock(&_res_cache_list_lock);
         return;
@@ -1726,6 +1766,16 @@ _resolv_cache_reset(unsigned  generation)
         cache->generation = generation;
     }
     pthread_mutex_unlock( &cache->lock );
+=======
+    if (cache != NULL) {
+        pthread_mutex_lock( &cache->lock );
+        if (cache->generation != generation) {
+            _cache_flush_locked(cache);
+            cache->generation = generation;
+        }
+        pthread_mutex_unlock( &cache->lock );
+    }
+>>>>>>> 9363d91218c7ed727c36ffaf82ff28d7755375ae
 
     pthread_mutex_unlock(&_res_cache_list_lock);
 }
@@ -1884,8 +1934,15 @@ _free_nameservers_locked(struct resolv_cache_info* cache_info)
     for (i = 0; i <= MAXNS; i++) {
         free(cache_info->nameservers[i]);
         cache_info->nameservers[i] = NULL;
+<<<<<<< HEAD
         freeaddrinfo(cache_info->nsaddrinfo[i]);
         cache_info->nsaddrinfo[i] = NULL;
+=======
+        if (cache_info->nsaddrinfo[i] != NULL) {
+            freeaddrinfo(cache_info->nsaddrinfo[i]);
+            cache_info->nsaddrinfo[i] = NULL;
+        }
+>>>>>>> 9363d91218c7ed727c36ffaf82ff28d7755375ae
     }
 }
 
