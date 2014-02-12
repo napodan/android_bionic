@@ -38,6 +38,7 @@
 
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <../libc/private/libc_logging.h>
 
 void notify_gdb_of_libraries();
 
@@ -87,9 +88,6 @@ static int socket_abstract_client(const char *name, int type)
     return s;
 }
 
-#include "linker_format.h"
-#include <../libc/private/logd.h>
-
 /*
  * Writes a summary of the signal to the log file.
  *
@@ -113,11 +111,17 @@ static void logSignalSummary(int signum, const siginfo_t* info)
         default:        signame = "???";        break;
     }
 
-    format_buffer(buffer, sizeof(buffer),
-        "Fatal signal %d (%s) at 0x%08x (code=%d)",
-        signum, signame, info->si_addr, info->si_code);
-
-    __libc_android_log_write(ANDROID_LOG_FATAL, "libc", buffer);
+    // "info" will be NULL if the siginfo_t information was not available.
+    if (info != NULL) {
+        __libc_format_log(ANDROID_LOG_FATAL, "libc",
+                          "Fatal signal %d (%s) at 0x%08x (code=%d)",
+                          signum, signame, info->si_addr,
+                          info->si_code);
+    } else {
+        __libc_format_log(ANDROID_LOG_FATAL, "libc",
+                          "Fatal signal %d (%s)",
+                signum, signame);
+    }
 }
 
 /*
