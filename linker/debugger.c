@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <../libc/private/libc_logging.h>
 
 extern int tgkill(int tgid, int tid, int sig);
 
@@ -105,9 +106,6 @@ static int socket_abstract_client(const char *name, int type)
     return s;
 }
 
-#include "linker_format.h"
-#include <../libc/private/logd.h>
-
 /*
  * Writes a summary of the signal to the log file.  We do this so that, if
  * for some reason we're not able to contact debuggerd, there is still some
@@ -145,17 +143,17 @@ static void logSignalSummary(int signum, const siginfo_t* info)
         // implies that 16 byte names are not.
         threadname[MAX_TASK_NAME_LEN] = 0;
     }
+    // "info" will be NULL if the siginfo_t information was not available.
     if (info != NULL) {
-        format_buffer(buffer, sizeof(buffer),
-            "Fatal signal %d (%s) at 0x%08x (code=%d), thread %d (%s)",
-            signum, signame, info->si_addr, info->si_code, gettid(), threadname);
+        __libc_format_log(ANDROID_LOG_FATAL, "libc",
+                          "Fatal signal %d (%s) at 0x%08x (code=%d), thread %d (%s)",
+                          signum, signame, info->si_addr,
+                          info->si_code, gettid(), threadname);
     } else {
-        format_buffer(buffer, sizeof(buffer),
-            "Fatal signal %d (%s), thread %d (%s)",
-            signum, signame, gettid(), threadname);
+        __libc_format_log(ANDROID_LOG_FATAL, "libc",
+                          "Fatal signal %d (%s), thread %d (%s)",
+                signum, signame, gettid(), threadname);
     }
-
-    __libc_android_log_write(ANDROID_LOG_FATAL, "libc", buffer);
 }
 
 /*
