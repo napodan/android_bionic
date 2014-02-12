@@ -241,7 +241,9 @@ void debugger_signal_handler(int n, siginfo_t* info, void* unused __attribute__(
     }
 
     /* remove our net so we fault for real when we return */
-    signal(n, SIG_DFL);
+    /* OXYGEN : we've got a SIGFPE when starting our graphics H/W */
+    //signal(n, SIG_DFL);
+    signal(n, SIG_IGN);
 
     /*
      * These signals are not re-thrown when we resume.  This means that
