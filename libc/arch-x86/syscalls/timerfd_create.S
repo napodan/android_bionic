@@ -3,10 +3,12 @@
 #include <machine/asm.h>
 #include <asm/unistd.h>
 
-ENTRY(getsid)
+ENTRY(timerfd_create)
     pushl   %ebx
-    mov     8(%esp), %ebx
-    movl    $__NR_getsid, %eax
+    pushl   %ecx
+    mov     12(%esp), %ebx
+    mov     16(%esp), %ecx
+    movl    $__NR_timerfd_create, %eax
     int     $0x80
     cmpl    $-MAX_ERRNO, %eax
     jb      1f
@@ -16,6 +18,7 @@ ENTRY(getsid)
     addl    $4, %esp
     orl     $-1, %eax
 1:
+    popl    %ecx
     popl    %ebx
     ret
-END(getsid)
+END(timerfd_create)

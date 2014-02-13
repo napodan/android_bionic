@@ -3,10 +3,16 @@
 #include <machine/asm.h>
 #include <asm/unistd.h>
 
-ENTRY(getsid)
+ENTRY(timerfd_settime)
     pushl   %ebx
-    mov     8(%esp), %ebx
-    movl    $__NR_getsid, %eax
+    pushl   %ecx
+    pushl   %edx
+    pushl   %esi
+    mov     20(%esp), %ebx
+    mov     24(%esp), %ecx
+    mov     28(%esp), %edx
+    mov     32(%esp), %esi
+    movl    $__NR_timerfd_settime, %eax
     int     $0x80
     cmpl    $-MAX_ERRNO, %eax
     jb      1f
@@ -16,6 +22,9 @@ ENTRY(getsid)
     addl    $4, %esp
     orl     $-1, %eax
 1:
+    popl    %esi
+    popl    %edx
+    popl    %ecx
     popl    %ebx
     ret
-END(getsid)
+END(timerfd_settime)

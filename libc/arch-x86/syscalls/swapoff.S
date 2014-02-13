@@ -3,10 +3,10 @@
 #include <machine/asm.h>
 #include <asm/unistd.h>
 
-ENTRY(getsid)
+ENTRY(swapoff)
     pushl   %ebx
     mov     8(%esp), %ebx
-    movl    $__NR_getsid, %eax
+    movl    $__NR_swapoff, %eax
     int     $0x80
     cmpl    $-MAX_ERRNO, %eax
     jb      1f
@@ -18,4 +18,4 @@ ENTRY(getsid)
 1:
     popl    %ebx
     ret
-END(getsid)
+END(swapoff)
