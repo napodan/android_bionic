@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2010, Intel Corporation
+Copyright (c) 2011, 2012, 2013 Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -28,15 +28,8 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#if defined(USE_SSE2)
+#define MEMCMP  wmemcmp
 
-# include "cache_wrapper.S"
-# undef __i686
-# define sse2_memset5_atom memset
-# include "sse2-memset5-atom.S"
-
-#else
-
-# include "memset.S"
-
-#endif
+#define USE_WCHAR
+#define USE_AS_WMEMCMP 1
+#include "ssse3-memcmp-atom.S"
