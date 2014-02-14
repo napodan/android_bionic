@@ -28,13 +28,8 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#if defined(USE_SSE2)
 
-# define sse2_strlen_atom strlen
-# include "sse2-strlen-atom.S"
+#define USE_AS_STRNCMP
+#define STRCMP  strncmp
+#include "ssse3-strcmp-atom.S"
 
-#else
-
-# include "strlen.S"
-
-#endif
