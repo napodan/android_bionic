@@ -29,17 +29,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-#if defined(USE_SSSE3)
-
-# include "cache_wrapper.S"
-# undef __i686
-# define MEMCPY	bcopy
-# define USE_AS_MEMMOVE
-# define USE_AS_BCOPY
-# include "ssse3-memcpy5.S"
-
-#else
-
-# include "bcopy.S"
-
-#endif
+#define MEMCPY memmove
+#define USE_AS_MEMMOVE
+#include "ssse3-memcpy-atom.S"
