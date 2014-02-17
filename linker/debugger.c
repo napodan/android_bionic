@@ -227,17 +227,15 @@ void debugger_signal_handler(int n, siginfo_t* info, void* unused __attribute__(
 
         if (ret < 0) {
             /* read or write failed -- broken connection? */
-            format_buffer(msgbuf, sizeof(msgbuf),
-                "Failed while talking to debuggerd: %s", strerror(errno));
-            __libc_android_log_write(ANDROID_LOG_FATAL, "libc", msgbuf);
+            __libc_format_log(ANDROID_LOG_FATAL, "libc",
+                    "Failed while talking to debuggerd: %s", strerror(errno));
         }
 
         close(s);
     } else {
         /* socket failed; maybe process ran out of fds */
-        format_buffer(msgbuf, sizeof(msgbuf),
-            "Unable to open connection to debuggerd: %s", strerror(errno));
-        __libc_android_log_write(ANDROID_LOG_FATAL, "libc", msgbuf);
+        __libc_format_log(ANDROID_LOG_FATAL, "libc", 
+                "Unable to open connection to debuggerd: %s", strerror(errno));
     }
 
     /* remove our net so we fault for real when we return */
