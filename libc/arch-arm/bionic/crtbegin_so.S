@@ -26,10 +26,6 @@
  * SUCH DAMAGE.
  */
 
-#include <machine/asm.h>
-
-ENTRY(__on_dlclose)
-
 # Implement static C++ destructors when the shared
 # library is unloaded through dlclose().
 #
@@ -55,8 +51,6 @@ __INIT_ARRAY__:
 __FINI_ARRAY__:
         .long -1
         .long __on_dlclose
-
-END(__on_dlclose)
 
 #ifdef CRT_LEGACY_WORKAROUND
 #include "__dso_handle.S"
