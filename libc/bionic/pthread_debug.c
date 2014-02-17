@@ -31,6 +31,8 @@
 #include <sys/system_properties.h>
 #include <sys/mman.h>
 
+#define HAVE_DLADDR 0
+
 #if HAVE_DLADDR
 #include <dlfcn.h>
 #endif
@@ -42,8 +44,8 @@
 #include <unwind.h>
 #include <unistd.h>
 
-#include "logd.h"
 #include "bionic_tls.h"
+#include "libc_logging.h"
 
 /*
  * ===========================================================================
@@ -97,20 +99,16 @@ the lock has been acquired.
 // =============================================================================
 
 #define LOGD(format, ...)  \
-    __libc_android_log_print(ANDROID_LOG_DEBUG, \
-            "pthread_debug", (format), ##__VA_ARGS__ )
+    __libc_format_log(ANDROID_LOG_DEBUG, "pthread_debug", (format), ##__VA_ARGS__ )
 
 #define LOGW(format, ...)  \
-    __libc_android_log_print(ANDROID_LOG_WARN, \
-            "pthread_debug", (format), ##__VA_ARGS__ )
+    __libc_format_log(ANDROID_LOG_WARN, "pthread_debug", (format), ##__VA_ARGS__ )
 
 #define LOGE(format, ...)  \
-    __libc_android_log_print(ANDROID_LOG_ERROR, \
-            "pthread_debug", (format), ##__VA_ARGS__ )
+    __libc_format_log(ANDROID_LOG_ERROR, "pthread_debug", (format), ##__VA_ARGS__ )
 
 #define LOGI(format, ...)  \
-    __libc_android_log_print(ANDROID_LOG_INFO, \
-            "pthread_debug", (format), ##__VA_ARGS__ )
+    __libc_format_log(ANDROID_LOG_INFO, "pthread_debug", (format), ##__VA_ARGS__ )
 
 static const char* const kStartBanner =
         "===============================================================";
@@ -589,13 +587,9 @@ static int traverseTree(MutexInfo* obj, MutexInfo const* objParent)
             if (sPthreadDebugLevel >= CAPTURE_CALLSTACK) {
                 int index = historyListHas(&obj->parents, objParent);
                 if ((size_t)index < (size_t)obj->stacks.count) {
-                    log_backtrace(
-                            obj->stacks.stack[index].addrs,
-                            obj->stacks.stack[index].depth);
+                    log_backtrace(obj->stacks.stack[index].addrs, obj->stacks.stack[index].depth);
                 } else {
-                    log_backtrace(
-                            obj->stackTrace,
-                            obj->stackDepth);
+                    log_backtrace(obj->stackTrace, obj->stackDepth);
                 }
             }
             result = 0;
@@ -848,8 +842,7 @@ static MutexInfo* get_most_recently_locked() {
  * after system properties have been initialized
  */
 
-__LIBC_HIDDEN__
-void pthread_debug_init(void) {
+__LIBC_HIDDEN__ void pthread_debug_init(void) {
     char env[PROP_VALUE_MAX];
     if (__system_property_get("debug.libc.pthread", env)) {
         int level = atoi(env);
@@ -890,8 +883,7 @@ void pthread_debug_mutex_lock_check(pthread_mutex_t *mutex)
  * still held (ie: before calling the real unlock)
  */
 
-__LIBC_HIDDEN__
-void pthread_debug_mutex_unlock_check(pthread_mutex_t *mutex)
+__LIBC_HIDDEN__ void pthread_debug_mutex_unlock_check(pthread_mutex_t *mutex)
 {
     if (sPthreadDebugLevel == 0) return;
     // prediction disabled for this thread
