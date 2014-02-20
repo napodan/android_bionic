@@ -479,9 +479,10 @@ libc_common_cflags := \
     -DINET6 \
     -I$(LOCAL_PATH)/private \
     -DPOSIX_MISTAKE \
-    -DLOG_ON_HEAP_ERROR \
-    -std=gnu99 \
-    -Wall -Wextra
+    -DUSE_LOCKS \
+	-DREALLOC_ZERO_BYTES_FREES \
+	-DSOFTFLOAT \
+	-DUSE_DL_PREFIX
 
 ifeq ($(strip $(DEBUG_BIONIC_LIBC)),true)
   libc_common_cflags += -DDEBUG
