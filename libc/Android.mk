@@ -480,10 +480,9 @@ libc_common_cflags := \
     -I$(LOCAL_PATH)/private \
     -DPOSIX_MISTAKE \
     -DUSE_LOCKS \
-	-DREALLOC_ZERO_BYTES_FREES 	\
-	-DSOFTFLOAT                     \
-	-DUSE_DL_PREFIX  \
-	-std=gnu99
+	-DREALLOC_ZERO_BYTES_FREES \
+	-DSOFTFLOAT \
+	-DUSE_DL_PREFIX
 
 ifeq ($(strip $(DEBUG_BIONIC_LIBC)),true)
   libc_common_cflags += -DDEBUG
