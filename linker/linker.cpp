@@ -26,7 +26,6 @@
  * SUCH DAMAGE.
  */
 
-#include <asm/elf.h>
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -43,8 +42,8 @@
 
 // Private C library headers.
 #include <private/bionic_tls.h>
-#include <private/logd.h>
 #include <private/ScopedPthreadMutexLocker.h>
+#include <../libc/private/libc_logging.h>
 
 #include "linker.h"
 #include "linker_debug.h"
@@ -147,13 +146,13 @@ static unsigned bitmask[4096];
 
 // You shouldn't try to call memory-allocating functions in the dynamic linker.
 // Guard against the most obvious ones.
-#define DISALLOW_ALLOCATION(return_type, name, ...)                             \
-    return_type name __VA_ARGS__                                                \
-    {                                                                           \
+#define DISALLOW_ALLOCATION(return_type, name, ...) \
+    return_type name __VA_ARGS__ \
+    { \
         const char* msg = "ERROR: " #name " called from the dynamic linker!\n"; \
-         __libc_android_log_write(ANDROID_LOG_FATAL, "linker", msg);            \
-        write(2, msg, sizeof(msg));                                             \
-        abort();                                                                \
+        __libc_format_log(ANDROID_LOG_FATAL, "linker", "%s", msg); \
+        write(2, msg, strlen(msg)); \
+        abort(); \
     }
 #define UNUSED __attribute__((unused))
 DISALLOW_ALLOCATION(void*, malloc, (size_t u UNUSED));
@@ -674,7 +673,7 @@ static int open_library(const char *name)
 
 // Returns 'true' if the library is prelinked or on failure so we error out
 // either way. We no longer support prelinking.
-static bool is_prelinked(int fd, const char* name)
+static unsigned long is_prelinked(int fd, const char* name)
 {
     struct prelink_info_t {
         long mmap_addr;
@@ -684,21 +683,21 @@ static bool is_prelinked(int fd, const char* name)
     off_t sz = lseek(fd, -sizeof(prelink_info_t), SEEK_END);
     if (sz < 0) {
         DL_ERR("lseek failed: %s", strerror(errno));
-        return true;
+        return 0;
     }
 
     prelink_info_t info;
     int rc = TEMP_FAILURE_RETRY(read(fd, &info, sizeof(info)));
     if (rc != sizeof(info)) {
         DL_ERR("could not read prelink_info_t structure for \"%s\":", name, strerror(errno));
-        return true;
+        return 0;
     }
 
-    if (memcmp(info.tag, "PRE ", 4) == 0) {
-        DL_ERR("prelinked libraries no longer supported: %s", name);
-        return true;
+    if (memcmp(info.tag, "PRE ", 4) != 0) {
+        DL_ERR("`%s` is not a prelinked library\n", name);
+        return 0;
     }
-    return false;
+    return (unsigned long)info.mmap_addr;
 }
 
 /* verify_elf_header
@@ -812,10 +811,21 @@ static soinfo* load_library(const char* name)
         return NULL;
     }
 
-    // We no longer support pre-linked libraries.
-    if (is_prelinked(fd.fd, name)) {
+    unsigned req_base = (unsigned) is_prelinked(fd.fd, name);
+    if (req_base == (unsigned)-1) {
+        DL_ERR("can't read end of library: %s: %s", name,
+               strerror(errno));
         return NULL;
     }
+    if (req_base != 0) {
+        TRACE("[ %5d - Prelinked library '%s' requesting base @ 0x%08x ]\n",
+              pid, name, req_base);
+    } else {
+        TRACE("[ %5d - Non-prelinked library '%s' found. ]\n", pid, name);
+    }
+
+    TRACE("[ %5d - '%s' (%s) wants base=0x%08x sz=0x%08x ]\n", pid, name,
+          (req_base ? "prelinked" : "not pre-linked"), req_base, ext_sz);
 
     // Reserve address space for all loadable segments.
     void* load_start = NULL;
@@ -823,6 +833,7 @@ static soinfo* load_library(const char* name)
     Elf32_Addr load_bias = 0;
     ret = phdr_table_reserve_memory(phdr_table,
                                     phdr_count,
+                                    req_base,
                                     &load_start,
                                     &load_size,
                                     &load_bias);
