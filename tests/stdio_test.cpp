@@ -75,7 +75,7 @@ TEST(stdio, getdelim) {
   // It should set the end-of-file indicator for the stream, though.
   errno = 0;
   ASSERT_EQ(getdelim(&word_read, &allocated_length, ' ', fp), -1);
-  ASSERT_EQ(errno, 0);
+  ASSERT_EQ(0, errno);
   ASSERT_TRUE(feof(fp));
 
   free(word_read);
@@ -91,18 +91,18 @@ TEST(stdio, getdelim_invalid) {
   // The first argument can't be NULL.
   errno = 0;
   ASSERT_EQ(getdelim(NULL, &buffer_length, ' ', fp), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(EINVAL, errno);
 
   // The second argument can't be NULL.
   errno = 0;
   ASSERT_EQ(getdelim(&buffer, NULL, ' ', fp), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(EINVAL, errno);
 
   // The stream can't be closed.
   fclose(fp);
   errno = 0;
   ASSERT_EQ(getdelim(&buffer, &buffer_length, ' ', fp), -1);
-  ASSERT_EQ(errno, EBADF);
+  ASSERT_EQ(EBADF, errno);
 }
 
 TEST(stdio, getline) {
@@ -140,7 +140,7 @@ TEST(stdio, getline) {
   // It should set the end-of-file indicator for the stream, though.
   errno = 0;
   ASSERT_EQ(getline(&line_read, &allocated_length, fp), -1);
-  ASSERT_EQ(errno, 0);
+  ASSERT_EQ(0, errno);
   ASSERT_TRUE(feof(fp));
 
   free(line_read);
@@ -156,16 +156,58 @@ TEST(stdio, getline_invalid) {
   // The first argument can't be NULL.
   errno = 0;
   ASSERT_EQ(getline(NULL, &buffer_length, fp), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(EINVAL, errno);
 
   // The second argument can't be NULL.
   errno = 0;
   ASSERT_EQ(getline(&buffer, NULL, fp), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(EINVAL, errno);
 
   // The stream can't be closed.
   fclose(fp);
   errno = 0;
   ASSERT_EQ(getline(&buffer, &buffer_length, fp), -1);
-  ASSERT_EQ(errno, EBADF);
+  ASSERT_EQ(EBADF, errno);
+}
+
+TEST(stdio, printf_ssize_t) {
+  // http://b/8253769
+  ASSERT_EQ(sizeof(ssize_t), sizeof(long int));
+  ASSERT_EQ(sizeof(ssize_t), sizeof(size_t));
+  // For our 32-bit ABI, we had a ssize_t definition that confuses GCC into saying:
+  // error: format '%zd' expects argument of type 'signed size_t',
+  //     but argument 4 has type 'ssize_t {aka long int}' [-Werror=format]
+  ssize_t v = 1;
+  char buf[32];
+  snprintf(buf, sizeof(buf), "%zd", v);
+}
+
+TEST(stdio, popen) {
+  FILE* fp = popen("cat /proc/version", "r");
+  ASSERT_TRUE(fp != NULL);
+
+  char buf[16];
+  char* s = fgets(buf, sizeof(buf), fp);
+  buf[13] = '\0';
+  ASSERT_STREQ("Linux version", s);
+
+  ASSERT_EQ(0, pclose(fp));
+}
+
+TEST(stdio, getc) {
+  FILE* fp = fopen("/proc/version", "r");
+  ASSERT_TRUE(fp != NULL);
+  ASSERT_EQ('L', getc(fp));
+  ASSERT_EQ('i', getc(fp));
+  ASSERT_EQ('n', getc(fp));
+  ASSERT_EQ('u', getc(fp));
+  ASSERT_EQ('x', getc(fp));
+  fclose(fp);
+}
+
+TEST(stdio, putc) {
+  FILE* fp = fopen("/proc/version", "r");
+  ASSERT_TRUE(fp != NULL);
+  ASSERT_EQ(EOF, putc('x', fp));
+  fclose(fp);
 }
