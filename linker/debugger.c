@@ -169,14 +169,14 @@ static bool haveSiginfo(int signum)
     sigemptyset(&newact.sa_mask);
 
     if (sigaction(signum, &newact, &oldact) < 0) {
-        __libc_android_log_write(ANDROID_LOG_FATAL, "libc",
+        __libc_format_log(ANDROID_LOG_FATAL, "libc",
             "Failed testing for SA_SIGINFO");
         return 0;
     }
     bool ret = (oldact.sa_flags & SA_SIGINFO) != 0;
 
     if (sigaction(signum, &oldact, NULL) < 0) {
-        __libc_android_log_write(ANDROID_LOG_FATAL, "libc",
+        __libc_format_log(ANDROID_LOG_FATAL, "libc",
             "Restore failed in test for SA_SIGINFO");
     }
     return ret;
