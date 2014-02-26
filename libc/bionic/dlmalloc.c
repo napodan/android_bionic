@@ -19,7 +19,7 @@
  * Ugly inclusion of C file so that bionic specific #defines configure
  * dlmalloc.
  */
-#include "../upstream-dlmalloc/malloc285.c"
+#include "../upstream-dlmalloc/malloc.c"
 
 
 /*
