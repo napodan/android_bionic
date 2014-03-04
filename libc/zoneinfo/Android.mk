@@ -1,5 +1,36 @@
 LOCAL_PATH:= $(call my-dir)
 
+############################################
+include $(CLEAR_VARS)
+LOCAL_MODULE := zoneinfo.dat
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_SRC_FILES := $(LOCAL_MODULE)
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT)/usr/share/zoneinfo
+include $(BUILD_PREBUILT)
+
+############################################
+include $(CLEAR_VARS)
+LOCAL_MODULE := zoneinfo.idx
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_SRC_FILES := $(LOCAL_MODULE)
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT)/usr/share/zoneinfo
+include $(BUILD_PREBUILT)
+
+############################################
+include $(CLEAR_VARS)
+LOCAL_MODULE := zoneinfo.version
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_SRC_FILES := $(LOCAL_MODULE)
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT)/usr/share/zoneinfo
+include $(BUILD_PREBUILT)
+
+############################################
 include $(CLEAR_VARS)
 LOCAL_MODULE := tzdata
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
